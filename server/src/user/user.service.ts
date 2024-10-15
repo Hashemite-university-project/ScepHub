@@ -313,20 +313,20 @@ export class UserService {
     }
   }
 
-  async refreshToken(refreshToken: string) {
-    try {
-      const refreshPayload =
-        await this.jwtService.verifyRefreshToken(refreshToken);
-      const newAccessToken = await this.jwtService.generateAccessToken(
-        refreshPayload.user_id,
-        refreshPayload.user_email,
-        refreshPayload.role,
-      );
-      return newAccessToken;
-    } catch (error) {
-      throw new UnauthorizedException('Invalid or expired refresh token');
-    }
-  }
+  //   async refreshToken(refreshToken: string) {
+  //     try {
+  //       const refreshPayload =
+  //         await this.jwtService.verifyRefreshToken(refreshToken);
+  //       const newAccessToken = await this.jwtService.generateAccessToken(
+  //         refreshPayload.user_id,
+  //         refreshPayload.user_email,
+  //         refreshPayload.role,
+  //       );
+  //       return newAccessToken;
+  //     } catch (error) {
+  //       throw new UnauthorizedException('Invalid or expired refresh token');
+  //     }
+  //   }
 
   async setStudentInformation(
     studentID: string,
@@ -362,7 +362,7 @@ export class UserService {
     }
   }
 
-  async setinstructorInformation(
+  async setInstructorInformation(
     instructorID: string,
     instructorForm: InstructorFormDto,
     instructorCV: string,

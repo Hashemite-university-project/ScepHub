@@ -19,11 +19,6 @@ function NavBar() {
                     cursor-pointer transition-colors duration-300">
                     Home
                 </Link>
-                <Link to={''} class="flex text-gray-600 
-                    cursor-pointer transition-colors duration-300
-                    font-semibold text-blue-600">
-                    Themes
-                </Link>
                 <Link to={''} class="flex text-gray-600 hover:text-blue-500
                     cursor-pointer transition-colors duration-300">
                     Developers

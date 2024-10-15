@@ -13,11 +13,6 @@ export class PaymentController {
 
   @Get()
   findAll() {
-    return this.paymentService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.paymentService.findOne(+id);
+    return this.paymentService.findOne();
   }
 }
