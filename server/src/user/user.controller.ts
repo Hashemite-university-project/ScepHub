@@ -18,7 +18,7 @@ import { StudentFormDto } from './dto/update/update-student.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadInterceptor } from 'src/interceptors/upload.interceptor';
 import { AuthGuard } from 'src/auth/auth.guard';
-import { InstructorFormtDto } from './dto/update/update-Instructor.dto';
+import { InstructorFormDto } from './dto/update/update-Instructor.dto';
 import { Roles } from 'src/auth/role/roles.decorator';
 import { Role } from 'src/auth/role/role.enum';
 import { RolesGuard } from 'src/auth/roles.guard';
@@ -38,11 +38,12 @@ export class UserController {
   ) {
     try {
       const newStudent = await this.userService.StudentSignUp(createStudentDto);
-      response.cookie('access_token', newStudent.token);
+      response.cookie('access_token', newStudent.access_token);
       response.cookie('refresh_token', newStudent.refreshToken);
       response.status(HttpStatus.CREATED).json({
-        access_token: newStudent,
+        access_token: newStudent.access_token,
         refresh_token: newStudent.refreshToken,
+        role: newStudent.role,
       });
     } catch (error) {
       console.log(error);
@@ -59,60 +60,61 @@ export class UserController {
     @Body() studentSignInDto: SignInDto,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const studentToken = await this.userService.studentSignIn(studentSignInDto);
-    response.cookie('access_token', studentToken.token);
-    response.cookie('refresh_token', studentToken.refreshToken);
+    const student = await this.userService.studentSignIn(studentSignInDto);
+    response.cookie('access_token', student.token);
+    response.cookie('refresh_token', student.refreshToken);
     response.status(HttpStatus.OK).json({
-      acess_token: studentToken.token,
-      refresh_token: studentToken.refreshToken,
+      access_token: student.token,
+      refresh_token: student.refreshToken,
+      role: student.role,
     });
   }
 
-  @ApiResponse({ status: 201, description: 'must return access token' })
-  @ApiResponse({ status: 403, description: 'Already exists' })
-  @Post('client/signUp')
-  async clientSignUp(
-    @Body() createStudentDto: CreateUserDto,
-    @Res({ passthrough: true }) response: Response,
-  ) {
-    try {
-      const newClient = await this.userService.clientSignUp(createStudentDto);
-      response.cookie('access_token', newClient.token);
-      response.cookie('refresh_token', newClient.refreshToken);
-      response.status(HttpStatus.CREATED).json({
-        access_token: newClient.token,
-        refresh_token: newClient.refreshToken,
-      });
-    } catch (error) {
-      console.log(error);
-      response
-        .status(HttpStatus.CONFLICT)
-        .json({ message: 'The Email or Phone number is already exist!' });
-    }
-  }
+  //   @ApiResponse({ status: 201, description: 'must return access token' })
+  //   @ApiResponse({ status: 403, description: 'Already exists' })
+  //   @Post('client/signUp')
+  //   async clientSignUp(
+  //     @Body() createStudentDto: CreateUserDto,
+  //     @Res({ passthrough: true }) response: Response,
+  //   ) {
+  //     try {
+  //       const newClient = await this.userService.clientSignUp(createStudentDto);
+  //       response.cookie('access_token', newClient.token);
+  //       response.cookie('refresh_token', newClient.refreshToken);
+  //       response.status(HttpStatus.CREATED).json({
+  //         access_token: newClient.token,
+  //         refresh_token: newClient.refreshToken,
+  //       });
+  //     } catch (error) {
+  //       console.log(error);
+  //       response
+  //         .status(HttpStatus.CONFLICT)
+  //         .json({ message: 'The Email or Phone number is already exist!' });
+  //     }
+  //   }
 
-  @ApiResponse({ status: 200, description: 'must return access token' })
-  @ApiResponse({ status: 403, description: 'Already exists' })
-  @Post('client/signIn')
-  async clientSignIn(
-    @Body() createStudentDto: CreateUserDto,
-    @Res({ passthrough: true }) response: Response,
-  ) {
-    try {
-      const client = await this.userService.clientSignIn(createStudentDto);
-      response.cookie('access_token', client.token);
-      response.cookie('refresh_token', client.refreshToken);
-      response.status(HttpStatus.OK).json({
-        access_token: client.token,
-        refresh_token: client.refreshToken,
-      });
-    } catch (error) {
-      console.log(error);
-      response
-        .status(HttpStatus.CONFLICT)
-        .json({ message: 'The Email or Phone number is already exist!' });
-    }
-  }
+  //   @ApiResponse({ status: 200, description: 'must return access token' })
+  //   @ApiResponse({ status: 403, description: 'Already exists' })
+  //   @Post('client/signIn')
+  //   async clientSignIn(
+  //     @Body() createStudentDto: CreateUserDto,
+  //     @Res({ passthrough: true }) response: Response,
+  //   ) {
+  //     try {
+  //       const client = await this.userService.clientSignIn(createStudentDto);
+  //       response.cookie('access_token', client.token);
+  //       response.cookie('refresh_token', client.refreshToken);
+  //       response.status(HttpStatus.OK).json({
+  //         access_token: client.token,
+  //         refresh_token: client.refreshToken,
+  //       });
+  //     } catch (error) {
+  //       console.log(error);
+  //       response
+  //         .status(HttpStatus.CONFLICT)
+  //         .json({ message: 'The Email or Phone number is already exist!' });
+  //     }
+  //   }
 
   @ApiResponse({ status: 201, description: 'must return access token' })
   @ApiResponse({ status: 401, description: 'incorrect password' })
@@ -122,18 +124,19 @@ export class UserController {
     @Res({ passthrough: true }) response: Response,
   ) {
     try {
-      const instructorToken =
+      const newInstructor =
         await this.userService.instructorSignUp(createInstructorDto);
-      response.cookie('access_token', instructorToken.token);
-      response.cookie('refresh_token', instructorToken.refreshToken);
+      response.cookie('access_token', newInstructor.token);
+      response.cookie('refresh_token', newInstructor.refreshToken);
       response.status(HttpStatus.CREATED).json({
-        access_token: instructorToken.token,
-        refresh_token: instructorToken.refreshToken,
+        access_token: newInstructor.token,
+        refresh_token: newInstructor.refreshToken,
+        role: newInstructor.role,
       });
     } catch (error) {
       console.log(error);
       response
-        .status(HttpStatus.FORBIDDEN)
+        .status(HttpStatus.CONFLICT)
         .json({ message: 'The Email or Phone number is already exist!' });
     }
   }
@@ -145,13 +148,14 @@ export class UserController {
     @Body() instructorSignIn: SignInDto,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const instructorToken =
+    const instructor =
       await this.userService.instructorSignIn(instructorSignIn);
-    response.cookie('access_token', instructorToken.token);
-    response.cookie('refresh_token', instructorToken.refreshToken);
+    response.cookie('access_token', instructor.token);
+    response.cookie('refresh_token', instructor.refreshToken);
     response.status(HttpStatus.OK).json({
-      access_token: instructorToken.token,
-      refresh_token: instructorToken.refreshToken,
+      access_token: instructor.token,
+      refresh_token: instructor.refreshToken,
+      role: instructor.role,
     });
   }
 
@@ -162,12 +166,13 @@ export class UserController {
     @Body() adminSignIn: SignInDto,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const adminToken = await this.userService.adminSignIn(adminSignIn);
-    response.cookie('access_token', adminToken.token);
-    response.cookie('refresh_token', adminToken.refreshToken);
+    const admin = await this.userService.adminSignIn(adminSignIn);
+    response.cookie('access_token', admin.token);
+    response.cookie('refresh_token', admin.refreshToken);
     response.status(HttpStatus.OK).json({
-      access_token: adminToken.token,
-      refresh_token: adminToken.refreshToken,
+      access_token: admin.token,
+      refresh_token: admin.refreshToken,
+      role: admin.role,
     });
   }
 
@@ -185,20 +190,6 @@ export class UserController {
     return await this.userService.createAdminAccount(createAdminDto, adminIMG);
   }
 
-  @Post('refresh-token')
-  async refreshToken(
-    @Res({ passthrough: true }) response: Response,
-    @Req() req: Request,
-  ) {
-    const refresh_Token = request.cookies['refresh_token'];
-    const newAccessToken = await this.userService.refreshToken(refresh_Token);
-    if (!refresh_Token) {
-      return response.status(401).send({ message: 'Refresh token not found' });
-    }
-    response.cookie('access_token', newAccessToken);
-    return refresh_Token;
-  }
-
   @ApiResponse({ status: 201 })
   @ApiResponse({ status: 400, description: 'invalid inputs' })
   @UseInterceptors(FileInterceptor('file'), UploadInterceptor)
@@ -209,12 +200,12 @@ export class UserController {
     @Body() studentForm: StudentFormDto,
     @Req() Request: Request,
   ) {
-    const srudentCV = Request['fileUrl'];
+    const studentCV = Request['fileUrl'];
     const studentID = Request['user'].user_id;
     await this.userService.setStudentInformation(
       studentID,
       studentForm,
-      srudentCV,
+      studentCV,
     );
     return {
       statusCode: HttpStatus.OK,
@@ -229,7 +220,7 @@ export class UserController {
   @Roles(Role.Instructor)
   @Put('instructor/info')
   async setInstructorInformation(
-    @Body() instructorForm: InstructorFormtDto,
+    @Body() instructorForm: InstructorFormDto,
     @Req() Request: Request,
   ) {
     const instructorCV = Request['fileUrl'];
@@ -244,4 +235,18 @@ export class UserController {
       message: 'Instructor information updated successfully',
     };
   }
+
+  //   @Post('refresh-token')
+  //   async refreshToken(
+  //     @Res({ passthrough: true }) response: Response,
+  //     @Req() req: Request,
+  //   ) {
+  //     const refresh_Token = request.cookies['refresh_token'];
+  //     const newAccessToken = await this.userService.refreshToken(refresh_Token);
+  //     if (!refresh_Token) {
+  //       return response.status(401).send({ message: 'Refresh token not found' });
+  //     }
+  //     response.cookie('access_token', newAccessToken);
+  //     return refresh_Token;
+  //   }
 }

@@ -13,11 +13,11 @@ import { Users } from 'src/database/entities/user.entity';
 import { Jwtservice } from 'src/auth/jwt-service/jwt-service.service';
 import { BcryptService } from 'src/auth/bcrypt/bcrypt.service';
 import { Students } from 'src/database/entities/student.entity';
-import { Sequelize, where } from 'sequelize';
+import { Sequelize } from 'sequelize';
 import { SignInDto } from './dto/sign-in.dto';
 import { Instructors } from 'src/database/entities/instructor.entity';
 import { StudentFormDto } from './dto/update/update-student.dto';
-import { InstructorFormtDto } from './dto/update/update-Instructor.dto';
+import { InstructorFormDto } from './dto/update/update-Instructor.dto';
 import { CreateAdminDto } from './dto/create/create-admin.dto';
 import { Admins } from 'src/database/entities/admin.entity';
 import { Clients } from 'src/database/entities/client.entity';
@@ -60,7 +60,7 @@ export class UserService {
         { transaction },
       );
       await transaction.commit();
-      const token = await this.jwtService.generateAccessToken(
+      const access_token = await this.jwtService.generateAccessToken(
         newUser.dataValues.user_id,
         newUser.dataValues.user_email,
         newUser.dataValues.role,
@@ -70,7 +70,8 @@ export class UserService {
         newUser.dataValues.user_email,
         newUser.dataValues.role,
       );
-      return { token, refreshToken };
+      const role = newUser.role;
+      return { access_token, refreshToken, role };
     } catch (error) {
       await transaction.rollback();
       console.log(error);
@@ -83,7 +84,7 @@ export class UserService {
       const student = await this.UserModel.findOne({
         where: { user_email: studentSignInDto.user_email },
       });
-      console.log(student);
+      //   console.log(student);
       if (!student) throw new NotFoundException();
       const passwordCompare = await this.bcryptService.compare(
         studentSignInDto.password,
@@ -101,81 +102,82 @@ export class UserService {
         student.dataValues.user_email,
         student.dataValues.role,
       );
-      return { token, refreshToken };
+      const role = student.role;
+      return { token, refreshToken, role };
     } catch (error) {
       console.log(error);
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async clientSignUp(createClientDto: CreateUserDto) {
-    const transaction = await this.sequelize.transaction();
-    try {
-      const hashedPassword = await this.bcryptService.hash(
-        createClientDto.password,
-      );
-      const newUser = await this.UserModel.create(
-        {
-          user_name: createClientDto.user_name,
-          user_email: createClientDto.user_email,
-          password: hashedPassword,
-          phone_number: createClientDto.phone_number,
-          role: 4,
-        },
-        { transaction },
-      );
-      const newClient = await this.ClientModel.create(
-        {
-          user_id: newUser.dataValues.user_id,
-        },
-        { transaction },
-      );
-      await transaction.commit();
-      const token = await this.jwtService.generateAccessToken(
-        newUser.dataValues.user_id,
-        newUser.dataValues.user_email,
-        newUser.dataValues.role,
-      );
-      const refreshToken = await this.jwtService.generateRefreshToken(
-        newUser.dataValues.user_id,
-        newUser.dataValues.user_email,
-        newUser.dataValues.role,
-      );
-      return { token, refreshToken };
-    } catch (error) {
-      await transaction.rollback();
-      console.log(error);
-      throw new ConflictException();
-    }
-  }
+  //   async clientSignUp(createClientDto: CreateUserDto) {
+  //     const transaction = await this.sequelize.transaction();
+  //     try {
+  //       const hashedPassword = await this.bcryptService.hash(
+  //         createClientDto.password,
+  //       );
+  //       const newUser = await this.UserModel.create(
+  //         {
+  //           user_name: createClientDto.user_name,
+  //           user_email: createClientDto.user_email,
+  //           password: hashedPassword,
+  //           phone_number: createClientDto.phone_number,
+  //           role: 4,
+  //         },
+  //         { transaction },
+  //       );
+  //       const newClient = await this.ClientModel.create(
+  //         {
+  //           user_id: newUser.dataValues.user_id,
+  //         },
+  //         { transaction },
+  //       );
+  //       await transaction.commit();
+  //       const token = await this.jwtService.generateAccessToken(
+  //         newUser.dataValues.user_id,
+  //         newUser.dataValues.user_email,
+  //         newUser.dataValues.role,
+  //       );
+  //       const refreshToken = await this.jwtService.generateRefreshToken(
+  //         newUser.dataValues.user_id,
+  //         newUser.dataValues.user_email,
+  //         newUser.dataValues.role,
+  //       );
+  //       return { token, refreshToken };
+  //     } catch (error) {
+  //       await transaction.rollback();
+  //       console.log(error);
+  //       throw new ConflictException();
+  //     }
+  //   }
 
-  async clientSignIn(clientSignInDto: SignInDto) {
-    try {
-      const client = await this.UserModel.findOne({
-        where: { user_email: clientSignInDto.user_email },
-      });
-      if (!client) throw new NotFoundException();
-      const passwordCompare = await this.bcryptService.compare(
-        clientSignInDto.password,
-        client.dataValues.password,
-      );
-      if (!passwordCompare) throw new UnauthorizedException();
-      if (client.dataValues.role != 4) throw new ForbiddenException();
-      const token = await this.jwtService.generateAccessToken(
-        client.dataValues.user_id,
-        client.dataValues.user_email,
-        client.dataValues.role,
-      );
-      const refreshToken = await this.jwtService.generateRefreshToken(
-        client.dataValues.user_id,
-        client.dataValues.user_email,
-        client.dataValues.role,
-      );
-      return { token, refreshToken };
-    } catch (error) {
-      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
+  //   async clientSignIn(clientSignInDto: SignInDto) {
+  //     try {
+  //       const client = await this.UserModel.findOne({
+  //         where: { user_email: clientSignInDto.user_email },
+  //       });
+  //       if (!client) throw new NotFoundException();
+  //       const passwordCompare = await this.bcryptService.compare(
+  //         clientSignInDto.password,
+  //         client.dataValues.password,
+  //       );
+  //       if (!passwordCompare) throw new UnauthorizedException();
+  //       if (client.dataValues.role != 4) throw new ForbiddenException();
+  //       const token = await this.jwtService.generateAccessToken(
+  //         client.dataValues.user_id,
+  //         client.dataValues.user_email,
+  //         client.dataValues.role,
+  //       );
+  //       const refreshToken = await this.jwtService.generateRefreshToken(
+  //         client.dataValues.user_id,
+  //         client.dataValues.user_email,
+  //         client.dataValues.role,
+  //       );
+  //       return { token, refreshToken };
+  //     } catch (error) {
+  //       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+  //     }
+  //   }
 
   async instructorSignUp(createInstructorDto: CreateUserDto) {
     const transaction = await this.sequelize.transaction();
@@ -211,7 +213,8 @@ export class UserService {
         newUser.dataValues.user_email,
         newUser.dataValues.role,
       );
-      return { token, refreshToken };
+      const role = newUser.role;
+      return { token, refreshToken, role };
     } catch (error) {
       await transaction.rollback();
       console.log(error);
@@ -241,7 +244,8 @@ export class UserService {
         instructor.dataValues.user_email,
         instructor.dataValues.role,
       );
-      return { token, refreshToken };
+      const role = instructor.role;
+      return { token, refreshToken, role };
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -269,7 +273,8 @@ export class UserService {
         admin.dataValues.user_email,
         admin.dataValues.role,
       );
-      return { token, refreshToken };
+      const role = admin.role;
+      return { token, refreshToken, role };
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -359,7 +364,7 @@ export class UserService {
 
   async setinstructorInformation(
     instructorID: string,
-    instructorForm: InstructorFormtDto,
+    instructorForm: InstructorFormDto,
     instructorCV: string,
   ) {
     const transaction = await this.sequelize.transaction();
