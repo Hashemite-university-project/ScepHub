@@ -15,7 +15,7 @@ function NavBar() {
             </div>
             {/* <!-- Links Section --> */}
             <div class="items-center hidden space-x-8 lg:flex">
-                <Link to={'/HomePage'} class="flex text-gray-600 hover:text-blue-500
+                <Link to={'/'} class="flex text-gray-600 hover:text-blue-500
                     cursor-pointer transition-colors duration-300">
                     Home
                 </Link>

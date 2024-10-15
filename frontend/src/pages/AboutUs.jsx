@@ -1,23 +1,8 @@
 import Footer from "../components/Footer";
 import NavBar from "../components/Navbar";
 import { motion } from 'framer-motion';
-// import { Link } from 'react-router-dom';
 
 function AboutUs() {
-    const Section = () => {
-        return (
-            <motion.div
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                viewport={{ once: true, amount: 0.2 }}
-                className="my-10 p-10 bg-gray-100 rounded-lg shadow-md"
-            >
-            <h2>This is a section</h2>
-            <p>This content will animate as you scroll.</p>
-            </motion.div>
-        );
-    };
     return ( 
         <>
             <NavBar />
@@ -194,14 +179,13 @@ function AboutUs() {
                             <div class="min-w-0 flex-1 py-0">
                                 <div class="text-md text-gray-500">
                                 <div>
-                                    <a href="#" class="font-medium text-gray-900 mr-2">v3.2.0</a>
-                                    <a href="#"
-                                    class="my-0.5 relative inline-flex items-center bg-white rounded-full border border-gray-300 px-3 py-0.5 text-sm">
+                                    <span class="font-medium text-gray-900 mr-2">v3.2.0</span>
+                                    <span class="my-0.5 relative inline-flex items-center bg-white rounded-full border border-gray-300 px-3 py-0.5 text-sm">
                                     <div class="absolute flex-shrink-0 flex items-center justify-center">
                                         <span class="h-1.5 w-1.5 rounded-full bg-green-500" aria-hidden="true"></span>
                                     </div>
                                     <div class="ml-3.5 font-medium text-gray-900">Feature</div>
-                                    </a>
+                                    </span>
                                 </div>
                                 <span class="whitespace-nowrap text-sm">10h ago</span>
                                 </div>
@@ -236,14 +220,13 @@ function AboutUs() {
                             <div class="min-w-0 flex-1 py-0">
                                 <div class="text-md text-gray-500">
                                 <div>
-                                    <a href="#" class="font-medium text-gray-900 mr-2">v3.1.0</a>
-                                    <a href="#"
-                                    class="my-0.5 relative inline-flex items-center bg-white rounded-full border border-gray-300 px-3 py-0.5 text-sm">
+                                    <span class="font-medium text-gray-900 mr-2">v3.1.0</span>
+                                    <span class="my-0.5 relative inline-flex items-center bg-white rounded-full border border-gray-300 px-3 py-0.5 text-sm">
                                     <div class="absolute flex-shrink-0 flex items-center justify-center">
                                         <span class="h-1.5 w-1.5 rounded-full bg-green-500" aria-hidden="true"></span>
                                     </div>
                                     <div class="ml-3.5 font-medium text-gray-900">Feature</div>
-                                    </a>
+                                    </span>
                                 </div>
                                 <span class="whitespace-nowrap text-sm">9h ago</span>
                                 </div>
@@ -278,14 +261,13 @@ function AboutUs() {
                             <div class="min-w-0 flex-1 py-0">
                                 <div class="text-md text-gray-500">
                                 <div>
-                                    <a href="#" class="font-medium text-gray-900 mr-2">v3.0.10</a>
-                                    <a href="#"
-                                    class="my-0.5 relative inline-flex items-center bg-white rounded-full border border-gray-300 px-3 py-0.5 text-sm">
+                                    <span class="font-medium text-gray-900 mr-2">v3.0.10</span>
+                                    <span class="my-0.5 relative inline-flex items-center bg-white rounded-full border border-gray-300 px-3 py-0.5 text-sm">
                                     <div class="absolute flex-shrink-0 flex items-center justify-center">
                                         <span class="h-1.5 w-1.5 rounded-full bg-red-500" aria-hidden="true"></span>
                                     </div>
                                     <div class="ml-3.5 font-medium text-gray-900">Bug</div>
-                                    </a>
+                                    </span>
                                 </div>
                                 <span class="whitespace-nowrap text-sm">6h ago</span>
                                 </div>
