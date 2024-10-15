@@ -225,7 +225,7 @@ export class UserController {
   ) {
     const instructorCV = Request['fileUrl'];
     const instructorID = Request['user'].user_id;
-    await this.userService.setinstructorInformation(
+    await this.userService.setInstructorInformation(
       instructorID,
       instructorForm,
       instructorCV,
