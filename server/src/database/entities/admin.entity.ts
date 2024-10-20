@@ -14,7 +14,7 @@ export class Admins extends Model {
   @Column({ type: DataType.BIGINT })
   user_id: bigint;
 
-  @Column({ type: DataType.TEXT })
+  @Column({ type: DataType.STRING(255) })
   department: string;
 
   @BelongsTo(() => Users)

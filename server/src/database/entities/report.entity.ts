@@ -13,7 +13,7 @@ export class Reports extends Model {
   @Column({ type: DataType.BIGINT, primaryKey: true, autoIncrement: true })
   report_id: bigint;
 
-  @Column(DataType.TEXT)
+  @Column(DataType.STRING(6553))
   report_message: string;
 
   @ForeignKey(() => Users)
@@ -23,7 +23,7 @@ export class Reports extends Model {
   @Column(DataType.DATE)
   report_at: Date;
 
-  @Column(DataType.TEXT)
+  @Column(DataType.STRING(65535))
   report_img: string;
 
   @Column(DataType.BOOLEAN)

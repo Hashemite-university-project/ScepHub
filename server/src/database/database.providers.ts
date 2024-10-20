@@ -1,6 +1,7 @@
 import { Sequelize } from 'sequelize-typescript';
 import { Dialect } from 'sequelize';
 import { Client } from 'pg';
+import * as mysql from 'mysql2/promise';
 import { Roles } from './entities/role.entity';
 import { Users } from './entities/user.entity';
 import { Students } from './entities/student.entity';
@@ -19,45 +20,82 @@ import { Reports } from './entities/report.entity';
 import { Contactus } from './entities/contact-us.entity';
 import { ProjectParticipants } from './entities/Project-Participants.entity';
 import { Clients } from './entities/client.entity';
+import * as dotenv from 'dotenv';
 
 export const databaseProviders = [
   {
     provide: 'SEQUELIZE',
     useFactory: async () => {
-      const pgClient = new Client({
-        host: process.env.HOST,
-        port: 5432,
-        user: process.env.DATABASE_USERNAME,
-        password: process.env.DATABASE_PASSWORD,
-      });
+      const dialect = process.env.DIALECT as Dialect;
 
-      try {
-        await pgClient.connect();
-        const res = await pgClient.query(
-          `SELECT 1 FROM pg_database WHERE datname = '${process.env.DATABASE_NAME}'`,
-        );
+      const host = process.env.HOST;
+      const port = Number(process.env.PORT);
+      const username = process.env.DATABASE_USERNAME;
+      const password = process.env.DATABASE_PASSWORD;
+      const databaseName = process.env.DATABASE_NAME;
 
-        if (res.rowCount === 0) {
-          await pgClient.query(
-            `CREATE DATABASE "${process.env.DATABASE_NAME}"`,
+      const checkAndCreatePostgresDB = async () => {
+        const pgClient = new Client({ host, port, user: username, password });
+
+        try {
+          await pgClient.connect();
+          const res = await pgClient.query(
+            `SELECT 1 FROM pg_database WHERE datname = '${databaseName}'`,
           );
-        }
 
-        await pgClient.end();
-      } catch (error) {
-        console.error('Error checking/creating database:', error);
-        throw error;
+          if (res.rowCount === 0) {
+            await pgClient.query(`CREATE DATABASE "${databaseName}"`);
+          }
+
+          await pgClient.end();
+        } catch (error) {
+          console.error('Error checking/creating PostgreSQL database:', error);
+          throw error;
+        }
+      };
+
+      const checkAndCreateMySQLDB = async () => {
+        const connection = await mysql.createConnection({
+          host,
+          port,
+          user: username,
+          password,
+        });
+
+        try {
+          const [databases] = await connection.query(
+            `SHOW DATABASES LIKE '${databaseName}'`,
+          );
+
+          if ((databases as any).length === 0) {
+            await connection.query(`CREATE DATABASE \`${databaseName}\``);
+          }
+
+          await connection.end();
+        } catch (error) {
+          console.error('Error checking/creating MySQL database:', error);
+          throw error;
+        }
+      };
+
+      if (dialect === 'postgres') {
+        await checkAndCreatePostgresDB();
+      } else if (dialect === 'mysql') {
+        await checkAndCreateMySQLDB();
+      } else {
+        throw new Error(`Unsupported dialect: ${dialect}`);
       }
 
       const sequelize = new Sequelize({
-        dialect: process.env.DIALECT as Dialect,
-        host: process.env.HOST,
-        port: 5432,
-        username: process.env.DATABASE_USERNAME,
-        password: process.env.DATABASE_PASSWORD,
-        database: process.env.DATABASE_NAME,
+        dialect,
+        host,
+        port,
+        username,
+        password,
+        database: databaseName,
         logging: false,
       });
+
       sequelize.addModels([
         Users,
         Roles,
@@ -79,6 +117,7 @@ export const databaseProviders = [
         Clients,
       ]);
       await sequelize.sync();
+
       return sequelize;
     },
   },

@@ -17,16 +17,16 @@ export class Projects extends Model {
   @Column({ type: DataType.BIGINT, primaryKey: true, autoIncrement: true })
   project_id: bigint;
 
-  @Column(DataType.TEXT)
+  @Column(DataType.STRING(255))
   project_name: string;
 
-  @Column(DataType.TEXT)
+  @Column(DataType.STRING(6553))
   project_description: string;
 
   @HasMany(() => Tasks)
   tasks: Tasks[];
 
-  @Column(DataType.TEXT)
+  @Column(DataType.STRING(65535))
   project_img: string;
 
   @Column(DataType.DATE)

@@ -19,28 +19,28 @@ export class Users extends Model {
   @Column({ type: DataType.BIGINT, primaryKey: true, autoIncrement: true })
   user_id: bigint;
 
-  @Column(DataType.TEXT)
+  @Column(DataType.STRING(255))
   user_name: string;
 
-  @Column({ type: DataType.TEXT, unique: true })
+  @Column({ type: DataType.STRING(255), unique: true })
   user_email: string;
 
-  @Column(DataType.TEXT)
+  @Column(DataType.STRING(255))
   password: string;
 
-  @Column({ type: DataType.TEXT, unique: true })
+  @Column({ type: DataType.STRING(255), unique: true })
   phone_number: string;
 
   @Column(DataType.BIGINT)
   role: bigint;
 
-  @Column({ type: DataType.TEXT, defaultValue: null })
+  @Column({ type: DataType.STRING(65535), defaultValue: null })
   user_img: string;
 
   @Column({ type: DataType.BOOLEAN, defaultValue: false })
   is_deleted: boolean;
 
-  @Column({ type: DataType.TEXT, defaultValue: null })
+  @Column({ type: DataType.STRING(65535), defaultValue: null })
   google_id: string;
 
   @HasOne(() => Admins)

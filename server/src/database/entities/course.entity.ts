@@ -16,26 +16,26 @@ export class Courses extends Model {
   @Column({ type: DataType.BIGINT, primaryKey: true, autoIncrement: true })
   course_id: bigint;
 
-  @Column(DataType.TEXT)
+  @Column(DataType.STRING(255))
   course_name: string;
 
-  @Column(DataType.TEXT)
+  @Column(DataType.STRING(65535))
   course_description: string;
 
   @ForeignKey(() => Instructors)
   @Column({ type: DataType.BIGINT })
   course_instructor: bigint;
 
-  @Column({ type: DataType.TEXT, defaultValue: null })
+  @Column({ type: DataType.STRING, defaultValue: null })
   tags: string;
 
-  @Column({ type: DataType.TEXT, defaultValue: null })
+  @Column({ type: DataType.STRING, defaultValue: null })
   course_img: string;
 
   @Column({ type: DataType.DECIMAL, defaultValue: 0 })
   rating: number;
 
-  @Column({ type: DataType.TEXT, defaultValue: null })
+  @Column({ type: DataType.STRING, defaultValue: null })
   course_comments: string;
 
   @Column({ type: DataType.BOOLEAN, defaultValue: false })
