@@ -21,7 +21,7 @@ export class Messages extends Model {
   @Column({ type: DataType.BIGINT })
   receiver_id: bigint;
 
-  @Column(DataType.TEXT)
+  @Column(DataType.STRING(6553))
   message: string;
 
   @Column(DataType.DATE)

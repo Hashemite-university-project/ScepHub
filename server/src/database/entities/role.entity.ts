@@ -6,7 +6,7 @@ export class Roles extends Model {
   @Column({ type: DataType.BIGINT, primaryKey: true, autoIncrement: true })
   role_id: bigint;
 
-  @Column(DataType.TEXT)
+  @Column(DataType.STRING(255))
   role_name: string;
 
   @HasMany(() => Users, { foreignKey: 'role' })
