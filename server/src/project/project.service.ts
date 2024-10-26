@@ -36,7 +36,7 @@ export class ProjectService {
       }
       const studentProjects = await this.ProjectModel.findAll({
         where: {
-          project_participants: enrolledProjectIds,
+          project_id: enrolledProjectIds,
         },
       });
       if (studentProjects.length === 0) {
