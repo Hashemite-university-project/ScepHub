@@ -39,7 +39,7 @@ export class Projects extends Model {
   project_instructor: bigint;
 
   @ForeignKey(() => Students)
-  @Column({ type: DataType.ARRAY(DataType.BIGINT), defaultValue: null })
+  @Column({ type: DataType.JSON, defaultValue: null })
   project_participants: bigint[];
 
   @ForeignKey(() => Categories)
