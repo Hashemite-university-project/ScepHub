@@ -23,7 +23,7 @@ function ContactUs() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:8080/contact-us', formData);
+      const response = await axios.post('http://localhost:8000/contact-us', formData, {withCredentials: true});
 
       setFormData({
         contact_name: '',

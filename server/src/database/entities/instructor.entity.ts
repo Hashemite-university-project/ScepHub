@@ -26,28 +26,28 @@ export class Instructors extends Model<Instructors> {
   user_id: bigint;
 
   @Column({
-    type: DataType.STRING(65535),
+    type: DataType.STRING,
     allowNull: true,
     comment: 'Google ID of the instructor',
   })
   google_id: string;
 
   @Column({
-    type: DataType.STRING(255),
+    type: DataType.STRING,
     allowNull: true,
     comment: 'Skills of the instructor',
   })
   skills: string;
 
   @Column({
-    type: DataType.STRING(255),
+    type: DataType.STRING,
     allowNull: false,
     comment: 'Major field of study or expertise',
   })
   major: string;
 
   @Column({
-    type: DataType.STRING(6553),
+    type: DataType.STRING,
     allowNull: true,
     comment: 'Brief biography of the instructor',
   })
@@ -61,7 +61,7 @@ export class Instructors extends Model<Instructors> {
   links: bigint;
 
   @Column({
-    type: DataType.STRING(65535),
+    type: DataType.TEXT,
     allowNull: true,
     comment: "Link to the instructor's CV",
   })

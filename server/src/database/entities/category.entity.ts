@@ -7,7 +7,7 @@ export class Categories extends Model {
   @Column({ type: DataType.BIGINT, primaryKey: true, autoIncrement: true })
   category_id: bigint;
 
-  @Column(DataType.STRING(255))
+  @Column(DataType.STRING)
   category_name: string;
 
   @HasMany(() => Courses, { foreignKey: 'course_category' })

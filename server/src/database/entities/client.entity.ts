@@ -14,7 +14,7 @@ export class Clients extends Model {
   @Column({ type: DataType.BIGINT })
   user_id: bigint;
 
-  @Column({ type: DataType.STRING(255), defaultValue: null })
+  @Column({ type: DataType.STRING, defaultValue: null })
   company_name: string;
 
   @Column({ type: DataType.BIGINT, defaultValue: null })

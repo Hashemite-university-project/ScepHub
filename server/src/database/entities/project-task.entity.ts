@@ -22,10 +22,10 @@ export class Tasks extends Model {
   @Column({ type: DataType.BIGINT })
   assigned_to: bigint;
 
-  @Column(DataType.STRING(255))
+  @Column(DataType.STRING)
   title: string;
 
-  @Column(DataType.STRING(6553))
+  @Column(DataType.STRING)
   description: string;
 
   @Column(DataType.ENUM('pending', 'in_progress', 'completed'))

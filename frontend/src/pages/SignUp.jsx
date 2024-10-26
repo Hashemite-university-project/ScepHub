@@ -54,9 +54,9 @@ function SignUp() {
 
     let apiUrl = '';
     if (formData.role === 'Instructor') {
-        apiUrl = 'http://localhost:8080/user/instructor/signUp';
+        apiUrl = 'http://localhost:8000/user/instructor/signUp';
     } else if (formData.role === 'Student') {
-        apiUrl = 'http://localhost:8080/user/student/signUp';
+        apiUrl = 'http://localhost:8000/user/student/signUp';
     }
 
   const handleSubmit = async (e) => {
@@ -64,7 +64,7 @@ function SignUp() {
     if (!validateForm()) return;
     setLoading(true);
     try {
-      const response = await axios.post(apiUrl, formData, { withCredentials: true });
+      const response = await axios.post(apiUrl, formData);
       if (response.status === 201) {
         setLoading(false);
         navigate(`/`);

@@ -36,19 +36,21 @@ function SignIn() {
 
         let apiUrl = '';
         if (role === 'Admin') {
-            apiUrl = 'http://localhost:8080/user/admin/signIn';
+            apiUrl = 'http://localhost:8000/user/signIn';
         } else if (role === 'Instructor') {
-            apiUrl = 'http://localhost:8080/user/instructor/signIn';
+            apiUrl = 'http://localhost:8000/user/signIn';
         } else if (role === 'Student') {
-            apiUrl = 'http://localhost:8080/user/student/signIn';
+            apiUrl = 'http://localhost:8000/user/signIn';
         }
 
         try {
             const response = await axios.post(apiUrl, {
                 user_email,
                 password,
-            }, { withCredentials: true });
-
+            },{
+                withCredentials: true, // Allow sending cookies with requests
+                });
+            console.log(response);
             if (response.status === 200) {
                 navigate(`/`);
             } else {
@@ -60,6 +62,7 @@ function SignIn() {
                 });
             }
         } catch (error) {
+            console.log(error)
             Swal.fire({
                 title: 'Request Failed',
                 text: 'Check your password or email.',

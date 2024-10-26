@@ -14,10 +14,10 @@ export class Students extends Model {
   @Column({ type: DataType.BIGINT })
   user_id: bigint;
 
-  @Column({ type: DataType.STRING(6553), defaultValue: null })
+  @Column({ type: DataType.STRING, defaultValue: null })
   skills: string;
 
-  @Column(DataType.STRING(255))
+  @Column(DataType.STRING)
   university_name: string;
 
   @Column({ type: DataType.BIGINT, defaultValue: null })
@@ -26,16 +26,16 @@ export class Students extends Model {
   @Column({ type: DataType.BIGINT, defaultValue: null })
   joined_projects: bigint;
 
-  @Column(DataType.TEXT)
+  @Column(DataType.STRING)
   major: string;
 
-  @Column({ type: DataType.STRING(6553), defaultValue: null })
+  @Column({ type: DataType.STRING, defaultValue: null })
   about_me: bigint;
 
   @Column({ type: DataType.BIGINT, defaultValue: null })
   links: bigint;
 
-  @Column({ type: DataType.STRING(65535), defaultValue: null })
+  @Column({ type: DataType.TEXT, defaultValue: null })
   user_cv: string;
 
   @BelongsTo(() => Users)

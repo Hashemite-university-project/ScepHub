@@ -19,9 +19,9 @@ import { Role } from 'src/auth/role/role.enum';
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
 
-  @ApiResponse({ status: 201 })
+  @ApiResponse({ status: 201, description: 'message saved successfully!' })
   @ApiResponse({ status: 400, description: 'invalid inputs' })
-  @ApiResponse({ status: 401, description: 'Unothorized "just for admins"' })
+  @ApiResponse({ status: 401, description: 'Unauthorized "just for admins"' })
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(Role.Admin)
   @Post()
@@ -34,7 +34,7 @@ export class CategoryController {
   }
 
   @ApiResponse({ status: 200 })
-  @ApiResponse({ status: 401, description: 'Unothorized "just for admins"' })
+  @ApiResponse({ status: 401, description: 'Unauthorized "just for admins"' })
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(Role.Admin)
   @Get()
