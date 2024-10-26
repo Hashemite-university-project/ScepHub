@@ -12,13 +12,13 @@ export class Links extends Model {
   @Column({ type: DataType.BIGINT, primaryKey: true, autoIncrement: true })
   link_id: bigint;
 
-  @Column(DataType.STRING(255))
+  @Column(DataType.STRING)
   link_name: string;
 
-  @Column({ type: DataType.STRING(6553), unique: true })
+  @Column({ type: DataType.STRING, unique: true })
   link: string;
 
-  @Column(DataType.STRING(6553))
+  @Column(DataType.STRING)
   user_link: bigint;
 
   @BelongsTo(() => Students, 'user_id')

@@ -53,69 +53,6 @@ export class UserController {
     }
   }
 
-  @ApiResponse({ status: 200, description: 'must return access token' })
-  @ApiResponse({ status: 401, description: 'Already exists' })
-  @Post('student/signIn')
-  async studentSignIn(
-    @Body() studentSignInDto: SignInDto,
-    @Res({ passthrough: true }) response: Response,
-  ) {
-    const student = await this.userService.studentSignIn(studentSignInDto);
-    response.cookie('access_token', student.token);
-    response.cookie('refresh_token', student.refreshToken);
-    response.status(HttpStatus.OK).json({
-      access_token: student.token,
-      refresh_token: student.refreshToken,
-      role: student.role,
-    });
-  }
-
-  //   @ApiResponse({ status: 201, description: 'must return access token' })
-  //   @ApiResponse({ status: 403, description: 'Already exists' })
-  //   @Post('client/signUp')
-  //   async clientSignUp(
-  //     @Body() createStudentDto: CreateUserDto,
-  //     @Res({ passthrough: true }) response: Response,
-  //   ) {
-  //     try {
-  //       const newClient = await this.userService.clientSignUp(createStudentDto);
-  //       response.cookie('access_token', newClient.token);
-  //       response.cookie('refresh_token', newClient.refreshToken);
-  //       response.status(HttpStatus.CREATED).json({
-  //         access_token: newClient.token,
-  //         refresh_token: newClient.refreshToken,
-  //       });
-  //     } catch (error) {
-  //       console.log(error);
-  //       response
-  //         .status(HttpStatus.CONFLICT)
-  //         .json({ message: 'The Email or Phone number is already exist!' });
-  //     }
-  //   }
-
-  //   @ApiResponse({ status: 200, description: 'must return access token' })
-  //   @ApiResponse({ status: 403, description: 'Already exists' })
-  //   @Post('client/signIn')
-  //   async clientSignIn(
-  //     @Body() createStudentDto: CreateUserDto,
-  //     @Res({ passthrough: true }) response: Response,
-  //   ) {
-  //     try {
-  //       const client = await this.userService.clientSignIn(createStudentDto);
-  //       response.cookie('access_token', client.token);
-  //       response.cookie('refresh_token', client.refreshToken);
-  //       response.status(HttpStatus.OK).json({
-  //         access_token: client.token,
-  //         refresh_token: client.refreshToken,
-  //       });
-  //     } catch (error) {
-  //       console.log(error);
-  //       response
-  //         .status(HttpStatus.CONFLICT)
-  //         .json({ message: 'The Email or Phone number is already exist!' });
-  //     }
-  //   }
-
   @ApiResponse({ status: 201, description: 'must return access token' })
   @ApiResponse({ status: 401, description: 'incorrect password' })
   @Post('instructor/signUp')
@@ -141,39 +78,32 @@ export class UserController {
     }
   }
 
-  @ApiResponse({ status: 200, description: 'must return an access token' })
-  @ApiResponse({ status: 401, description: 'incorrect password' })
-  @Post('instructor/signIn')
-  async instructorSignIn(
-    @Body() instructorSignIn: SignInDto,
+  @ApiResponse({
+    status: 200,
+    description: 'Must return access and refresh token',
+  })
+  @ApiResponse({ status: 403, description: 'User Already exists!' })
+  @ApiResponse({ status: 401, description: 'Unauthorized user' })
+  @Post('signIn')
+  async signIn(
+    @Body() signInDto: SignInDto,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const instructor =
-      await this.userService.instructorSignIn(instructorSignIn);
-    response.cookie('access_token', instructor.token);
-    response.cookie('refresh_token', instructor.refreshToken);
-    response.status(HttpStatus.OK).json({
-      access_token: instructor.token,
-      refresh_token: instructor.refreshToken,
-      role: instructor.role,
-    });
-  }
-
-  @ApiResponse({ status: 200, description: 'must return an access token' })
-  @ApiResponse({ status: 401, description: 'incorrect password' })
-  @Post('admin/signIn')
-  async adminSignIn(
-    @Body() adminSignIn: SignInDto,
-    @Res({ passthrough: true }) response: Response,
-  ) {
-    const admin = await this.userService.adminSignIn(adminSignIn);
-    response.cookie('access_token', admin.token);
-    response.cookie('refresh_token', admin.refreshToken);
-    response.status(HttpStatus.OK).json({
-      access_token: admin.token,
-      refresh_token: admin.refreshToken,
-      role: admin.role,
-    });
+    try {
+      const user = await this.userService.signIn(signInDto);
+      response.cookie('access_token', user.accessToken);
+      response.cookie('refresh_token', user.refreshToken);
+      response.status(HttpStatus.OK).json({
+        access_token: user.accessToken,
+        refresh_token: user.refreshToken,
+        role: user.userRole,
+      });
+    } catch (error) {
+      console.log(error);
+      response
+        .status(HttpStatus.CONFLICT)
+        .json({ message: 'User not exist! wrong email or password' });
+    }
   }
 
   @ApiResponse({ status: 201 })
@@ -188,6 +118,16 @@ export class UserController {
   ) {
     const adminIMG = Request['fileUrl'];
     return await this.userService.createAdminAccount(createAdminDto, adminIMG);
+  }
+
+  @ApiResponse({ status: 200 })
+  @ApiResponse({ status: 401, description: 'Unauthorized user tokens' })
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.Admin, Role.Instructor, Role.Student)
+  @Post('info')
+  async userInfo(@Req() Request: Request) {
+    const userID = Request['user'].user_id;
+    return await this.userService.userInfo(userID);
   }
 
   @ApiResponse({ status: 201 })

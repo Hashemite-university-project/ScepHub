@@ -6,9 +6,8 @@ import * as basicAuth from 'express-basic-auth';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.enableCors({ origin: 'http://localhost:3000', credentials: true });
+  app.enableCors({ origin: process.env.ALLOWED_ORIGIN, credentials: true });
   app.use(cookieParser());
-
   app.use(
     ['/api', '/api-json'],
     basicAuth({

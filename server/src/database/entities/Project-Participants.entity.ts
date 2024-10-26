@@ -22,7 +22,7 @@ export class ProjectParticipants extends Model {
   @Column({ type: DataType.BIGINT })
   student_id: bigint;
 
-  @Column(DataType.STRING(255))
+  @Column(DataType.STRING)
   role: string;
 
   @BelongsTo(() => Projects)

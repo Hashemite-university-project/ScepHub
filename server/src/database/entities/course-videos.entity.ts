@@ -17,13 +17,13 @@ export class Contents extends Model<Contents> {
   @Column({ type: DataType.BIGINT, primaryKey: true, autoIncrement: true })
   video_id: bigint;
 
-  @Column(DataType.STRING(255))
+  @Column(DataType.STRING)
   video_title: string;
 
-  @Column(DataType.STRING(65535))
+  @Column(DataType.TEXT)
   video_url: string;
 
-  @Column(DataType.STRING(65535))
+  @Column(DataType.STRING)
   video_description: string;
 
   @Column({ type: DataType.INTEGER })

@@ -117,7 +117,7 @@ export const databaseProviders = [
         Clients,
       ]);
       await sequelize.sync();
-
+      
       return sequelize;
     },
   },

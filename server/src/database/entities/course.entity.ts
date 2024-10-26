@@ -16,10 +16,10 @@ export class Courses extends Model {
   @Column({ type: DataType.BIGINT, primaryKey: true, autoIncrement: true })
   course_id: bigint;
 
-  @Column(DataType.STRING(255))
+  @Column(DataType.STRING)
   course_name: string;
 
-  @Column(DataType.STRING(65535))
+  @Column(DataType.STRING)
   course_description: string;
 
   @ForeignKey(() => Instructors)
@@ -29,7 +29,7 @@ export class Courses extends Model {
   @Column({ type: DataType.STRING, defaultValue: null })
   tags: string;
 
-  @Column({ type: DataType.STRING, defaultValue: null })
+  @Column({ type: DataType.TEXT, defaultValue: null })
   course_img: string;
 
   @Column({ type: DataType.DECIMAL, defaultValue: 0 })
