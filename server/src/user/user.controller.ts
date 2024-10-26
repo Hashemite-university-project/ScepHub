@@ -8,6 +8,7 @@ import {
   Req,
   UseGuards,
   Put,
+  Get,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create/create-user.dto';
@@ -124,7 +125,7 @@ export class UserController {
   @ApiResponse({ status: 401, description: 'Unauthorized user tokens' })
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(Role.Admin, Role.Instructor, Role.Student)
-  @Post('info')
+  @Get('info')
   async userInfo(@Req() Request: Request) {
     const userID = Request['user'].user_id;
     return await this.userService.userInfo(userID);

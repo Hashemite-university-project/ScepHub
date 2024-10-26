@@ -23,8 +23,8 @@ export class Students extends Model {
   @Column({ type: DataType.BIGINT, defaultValue: null })
   enrolled_courses: bigint;
 
-  @Column({ type: DataType.BIGINT, defaultValue: null })
-  joined_projects: bigint;
+  @Column({ type: DataType.ARRAY(DataType.BIGINT), defaultValue: null })
+  joined_projects: bigint[];
 
   @Column(DataType.STRING)
   major: string;

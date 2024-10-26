@@ -6,11 +6,13 @@ import {
   ForeignKey,
   BelongsTo,
   HasMany,
+  BelongsToMany,
 } from 'sequelize-typescript';
 import { Tasks } from './project-task.entity';
 import { Instructors } from './instructor.entity';
 import { ProjectParticipants } from './Project-Participants.entity';
 import { Categories } from './category.entity';
+import { Students } from './student.entity';
 
 @Table
 export class Projects extends Model {
@@ -36,6 +38,10 @@ export class Projects extends Model {
   @Column({ type: DataType.BIGINT })
   project_instructor: bigint;
 
+  @ForeignKey(() => Students)
+  @Column({ type: DataType.ARRAY(DataType.BIGINT), defaultValue: null })
+  project_participants: bigint[];
+
   @ForeignKey(() => Categories)
   @Column({ type: DataType.BIGINT })
   category_id: bigint;
@@ -54,4 +60,12 @@ export class Projects extends Model {
 
   @BelongsTo(() => Instructors, 'project_instructor')
   instructor: Instructors;
+
+  @BelongsToMany(
+    () => Students,
+    'project_participants',
+    'project_id',
+    'student_id',
+  )
+  students: Students[];
 }
