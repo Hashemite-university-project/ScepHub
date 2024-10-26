@@ -5,6 +5,7 @@ import { Contactus } from 'src/database/entities/contact-us.entity';
 import { Contents } from 'src/database/entities/course-videos.entity';
 import { Courses } from 'src/database/entities/course.entity';
 import { Instructors } from 'src/database/entities/instructor.entity';
+import { Projects } from 'src/database/entities/project.entity';
 import { Students } from 'src/database/entities/student.entity';
 import { Users } from 'src/database/entities/user.entity';
 
@@ -44,5 +45,9 @@ export const modelsProviders = [
   {
     provide: 'CONTENT_REPOSITORY',
     useValue: Contents,
+  },
+  {
+    provide: 'PROJECTS_REPOSITORY',
+    useValue: Projects,
   },
 ];
