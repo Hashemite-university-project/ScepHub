@@ -30,6 +30,7 @@ export class ProjectController {
 
   @Get()
   findAll() {
+    //
     return this.projectService.findAll();
   }
 
