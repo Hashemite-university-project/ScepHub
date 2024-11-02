@@ -17,20 +17,16 @@ import { Courses } from './course.entity';
   underscored: true,
 })
 export class Instructors extends Model<Instructors> {
+  @Column({ type: DataType.BIGINT, primaryKey: true, autoIncrement: true })
+  id: bigint;
+
   @ForeignKey(() => Users)
   @Column({
     type: DataType.BIGINT,
     allowNull: false,
     comment: 'Foreign key to Users table',
   })
-  user_id: bigint;
-
-  @Column({
-    type: DataType.STRING,
-    allowNull: true,
-    comment: 'Google ID of the instructor',
-  })
-  google_id: string;
+  instructor_id: bigint;
 
   @Column({
     type: DataType.STRING,

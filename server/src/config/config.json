@@ -1,23 +1,23 @@
 {
   "development": {
-    "username": "postgres",
-    "password": "359157",
+    "username": "root",
+    "password": "",
     "database": "ScepHub",
     "host": "localhost",
-    "dialect": "postgres"
+    "dialect": "mysql"
   },
   "test": {
-    "username": "postgres",
-    "password": "359157",
+    "username": "root",
+    "password": "",
     "database": "ScepHub",
     "host": "localhost",
-    "dialect": "postgres"
+    "dialect": "mysql"
   },
   "production": {
-    "username": "postgres",
-    "password": "359157",
+    "username": "root",
+    "password": "",
     "database": "ScepHub",
     "host": "localhost",
-    "dialect": "postgres"
+    "dialect": "mysql"
   }
 }

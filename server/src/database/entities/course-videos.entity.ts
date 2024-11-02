@@ -10,8 +10,8 @@ import { Courses } from './course.entity';
 
 @Table({
   tableName: 'contents',
-  timestamps: true, // Automatically adds createdAt and updatedAt fields
-  underscored: true, // Use snake_case for column names
+  timestamps: true,
+  underscored: true,
 })
 export class Contents extends Model<Contents> {
   @Column({ type: DataType.BIGINT, primaryKey: true, autoIncrement: true })
@@ -25,9 +25,6 @@ export class Contents extends Model<Contents> {
 
   @Column(DataType.STRING)
   video_description: string;
-
-  @Column({ type: DataType.INTEGER })
-  video_order: number;
 
   @ForeignKey(() => Courses)
   @Column({ type: DataType.BIGINT })

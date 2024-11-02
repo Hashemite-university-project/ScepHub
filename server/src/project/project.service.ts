@@ -12,6 +12,8 @@ import { Students } from 'src/database/entities/student.entity';
 import { Users } from 'src/database/entities/user.entity';
 import { Sequelize } from 'sequelize';
 import { Projects } from 'src/database/entities/project.entity';
+import { ProjectParticipants } from 'src/database/entities/Project-Participants.entity';
+import { Op } from 'sequelize';
 
 @Injectable()
 export class ProjectService {
@@ -23,27 +25,27 @@ export class ProjectService {
     private readonly StudentModel: typeof Students,
     @Inject('INSTRUCTOR_REPOSITORY')
     private readonly InstructorModel: typeof Instructors,
+    @Inject('PROJECTPARTICIPANTS')
+    private readonly participantsModel: typeof ProjectParticipants,
     @Inject('SEQUELIZE') private readonly sequelize: Sequelize,
   ) {}
 
   async getStudentProject(userID: string) {
     try {
-      const user = await this.StudentModel.findByPk(userID);
-      if (!user) throw new NotFoundException('No user data!');
-      const enrolledProjectIds = user.joined_projects;
-      if (!enrolledProjectIds || enrolledProjectIds.length === 0) {
-        throw new NotFoundException('No enrolled projects found!');
-      }
-      const studentProjects = await this.ProjectModel.findAll({
-        where: {
-          project_id: enrolledProjectIds,
-        },
+      const studentProjects = await this.participantsModel.findAll({
+        where: Sequelize.literal(
+          `JSON_CONTAINS(joined_Students, '[${userID}]', '$')`,
+        ),
+        include: [
+          {
+            model: Projects,
+            as: 'project',
+          },
+        ],
       });
-      if (studentProjects.length === 0) {
-        return 'No projects found for the enrolled IDs!';
-      }
       return studentProjects;
     } catch (error) {
+      console.log(error);
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }

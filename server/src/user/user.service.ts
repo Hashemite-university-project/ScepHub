@@ -19,7 +19,6 @@ import { StudentFormDto } from './dto/update/update-student.dto';
 import { InstructorFormDto } from './dto/update/update-Instructor.dto';
 import { CreateAdminDto } from './dto/create/create-admin.dto';
 import { Admins } from 'src/database/entities/admin.entity';
-import { Clients } from 'src/database/entities/client.entity';
 
 @Injectable()
 export class UserService {
@@ -28,9 +27,7 @@ export class UserService {
     @Inject('STUDENT_REPOSITORY')
     private readonly StudentModel: typeof Students,
     @Inject('INSTRUCTOR_REPOSITORY')
-    private readonly InstructorModel: typeof Clients,
-    @Inject('CLIENTS_REPOSITORY')
-    private readonly ClientModel: typeof Instructors,
+    private readonly InstructorModel: typeof Instructors,
     @Inject('ADMIN_REPOSITORY')
     private readonly adminModel: typeof Admins,
     private readonly jwtService: Jwtservice,
@@ -74,7 +71,7 @@ export class UserService {
     } catch (error) {
       await transaction.rollback();
       console.log(error);
-      throw new ConflictException();
+      //   throw new ConflictException();
     }
   }
 
@@ -96,7 +93,7 @@ export class UserService {
       );
       await this.InstructorModel.create(
         {
-          user_id: newUser.dataValues.user_id,
+          instructor_id: newUser.dataValues.user_id,
           major: createInstructorDto.major,
         },
         { transaction },
@@ -236,7 +233,7 @@ export class UserService {
     try {
       const instructor = await this.InstructorModel.findOne({
         where: {
-          user_id: instructorID,
+          instructor_id: instructorID,
         },
         transaction,
       });

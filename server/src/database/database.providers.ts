@@ -1,6 +1,5 @@
 import { Sequelize } from 'sequelize-typescript';
 import { Dialect } from 'sequelize';
-import { Client } from 'pg';
 import * as mysql from 'mysql2/promise';
 import { Roles } from './entities/role.entity';
 import { Users } from './entities/user.entity';
@@ -19,41 +18,20 @@ import { Ratings } from './entities/rate.entity';
 import { Reports } from './entities/report.entity';
 import { Contactus } from './entities/contact-us.entity';
 import { ProjectParticipants } from './entities/Project-Participants.entity';
-import { Clients } from './entities/client.entity';
 import * as dotenv from 'dotenv';
+
+dotenv.config();
 
 export const databaseProviders = [
   {
     provide: 'SEQUELIZE',
     useFactory: async () => {
       const dialect = process.env.DIALECT as Dialect;
-
       const host = process.env.HOST;
-      const port = Number(process.env.PORT);
+      const port = Number(process.env.DATABASE_PORT);
       const username = process.env.DATABASE_USERNAME;
       const password = process.env.DATABASE_PASSWORD;
       const databaseName = process.env.DATABASE_NAME;
-
-      const checkAndCreatePostgresDB = async () => {
-        const pgClient = new Client({ host, port, user: username, password });
-
-        try {
-          await pgClient.connect();
-          const res = await pgClient.query(
-            `SELECT 1 FROM pg_database WHERE datname = '${databaseName}'`,
-          );
-
-          if (res.rowCount === 0) {
-            await pgClient.query(`CREATE DATABASE "${databaseName}"`);
-          }
-
-          await pgClient.end();
-        } catch (error) {
-          console.error('Error checking/creating PostgreSQL database:', error);
-          throw error;
-        }
-      };
-
       const checkAndCreateMySQLDB = async () => {
         const connection = await mysql.createConnection({
           host,
@@ -66,58 +44,62 @@ export const databaseProviders = [
           const [databases] = await connection.query(
             `SHOW DATABASES LIKE '${databaseName}'`,
           );
-
           if ((databases as any).length === 0) {
             await connection.query(`CREATE DATABASE \`${databaseName}\``);
+            console.log(`Database "${databaseName}" created.`);
           }
-
-          await connection.end();
         } catch (error) {
           console.error('Error checking/creating MySQL database:', error);
           throw error;
+        } finally {
+          await connection.end();
         }
       };
 
-      if (dialect === 'postgres') {
-        await checkAndCreatePostgresDB();
-      } else if (dialect === 'mysql') {
+      try {
         await checkAndCreateMySQLDB();
-      } else {
-        throw new Error(`Unsupported dialect: ${dialect}`);
+      } catch (error) {
+        console.error('Failed to create or check database:', error);
+        throw error;
       }
-
-      const sequelize = new Sequelize({
-        dialect,
-        host,
-        port,
-        username,
-        password,
-        database: databaseName,
-        logging: false,
-      });
-
-      sequelize.addModels([
-        Users,
-        Roles,
-        Students,
-        Admins,
-        Instructors,
-        Courses,
-        Projects,
-        Tasks,
-        Contents,
-        Messages,
-        Categories,
-        Links,
-        Payments,
-        Ratings,
-        Reports,
-        Contactus,
-        ProjectParticipants,
-        Clients,
-      ]);
-      await sequelize.sync({ alter: true });
-
+      let sequelize: Sequelize;
+      try {
+        sequelize = new Sequelize({
+          dialect,
+          host,
+          port,
+          username,
+          password,
+          database: databaseName,
+          logging: false,
+        });
+        sequelize.addModels([
+          Users,
+          Roles,
+          Students,
+          Admins,
+          Instructors,
+          Courses,
+          Projects,
+          Tasks,
+          Contents,
+          Messages,
+          Categories,
+          Links,
+          Payments,
+          Ratings,
+          Reports,
+          Contactus,
+          ProjectParticipants,
+        ]);
+        await sequelize.sync({ alter: true });
+      } catch (error) {
+        console.error(
+          'Error during Sequelize initialization or model synchronization:',
+          error,
+        );
+        throw error;
+      }
       return sequelize;
     },
   },

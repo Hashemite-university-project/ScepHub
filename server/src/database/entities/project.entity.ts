@@ -6,13 +6,11 @@ import {
   ForeignKey,
   BelongsTo,
   HasMany,
-  BelongsToMany,
 } from 'sequelize-typescript';
 import { Tasks } from './project-task.entity';
 import { Instructors } from './instructor.entity';
 import { ProjectParticipants } from './Project-Participants.entity';
 import { Categories } from './category.entity';
-import { Students } from './student.entity';
 
 @Table
 export class Projects extends Model {
@@ -31,20 +29,13 @@ export class Projects extends Model {
   @Column(DataType.TEXT)
   project_img: string;
 
-  @Column(DataType.DATE)
-  created_at: Date;
-
   @ForeignKey(() => Instructors)
   @Column({ type: DataType.BIGINT })
   project_instructor: bigint;
 
-  @ForeignKey(() => Students)
-  @Column({ type: DataType.JSON, defaultValue: null })
-  project_participants: bigint[];
-
   @ForeignKey(() => Categories)
   @Column({ type: DataType.BIGINT })
-  category_id: bigint;
+  project_category: bigint;
 
   @Column(DataType.DATE)
   start_date: Date;
@@ -55,17 +46,9 @@ export class Projects extends Model {
   @BelongsTo(() => Categories)
   category: Categories;
 
-  @HasMany(() => ProjectParticipants)
+  @HasMany(() => ProjectParticipants, { foreignKey: 'project_id' })
   participants: ProjectParticipants[];
 
   @BelongsTo(() => Instructors, 'project_instructor')
   instructor: Instructors;
-
-  @BelongsToMany(
-    () => Students,
-    'project_participants',
-    'project_id',
-    'student_id',
-  )
-  students: Students[];
 }

@@ -1,10 +1,11 @@
 import { Admins } from 'src/database/entities/admin.entity';
 import { Categories } from 'src/database/entities/category.entity';
-import { Clients } from 'src/database/entities/client.entity';
 import { Contactus } from 'src/database/entities/contact-us.entity';
 import { Contents } from 'src/database/entities/course-videos.entity';
 import { Courses } from 'src/database/entities/course.entity';
 import { Instructors } from 'src/database/entities/instructor.entity';
+import { Payments } from 'src/database/entities/payment.entity';
+import { ProjectParticipants } from 'src/database/entities/Project-Participants.entity';
 import { Projects } from 'src/database/entities/project.entity';
 import { Students } from 'src/database/entities/student.entity';
 import { Users } from 'src/database/entities/user.entity';
@@ -21,10 +22,6 @@ export const modelsProviders = [
   {
     provide: 'INSTRUCTOR_REPOSITORY',
     useValue: Instructors,
-  },
-  {
-    provide: 'CLIENTS_REPOSITORY',
-    useValue: Clients,
   },
   {
     provide: 'ADMIN_REPOSITORY',
@@ -49,5 +46,13 @@ export const modelsProviders = [
   {
     provide: 'PROJECTS_REPOSITORY',
     useValue: Projects,
+  },
+  {
+    provide: 'PAYMENTS',
+    useValue: Payments,
+  },
+  {
+    provide: 'PROJECTPARTICIPANTS',
+    useValue: ProjectParticipants,
   },
 ];

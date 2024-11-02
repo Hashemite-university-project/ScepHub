@@ -6,7 +6,6 @@ import {
   ForeignKey,
   BelongsTo,
 } from 'sequelize-typescript';
-import { Users } from './user.entity';
 import { Projects } from './project.entity';
 
 @Table
@@ -18,16 +17,9 @@ export class ProjectParticipants extends Model {
   @Column({ type: DataType.BIGINT })
   project_id: bigint;
 
-  @ForeignKey(() => Users)
-  @Column({ type: DataType.BIGINT })
-  student_id: bigint;
-
-  @Column(DataType.STRING)
-  role: string;
+  @Column({ type: DataType.JSON })
+  joined_Students: bigint[];
 
   @BelongsTo(() => Projects)
   project: Projects;
-
-  @BelongsTo(() => Users)
-  student: Users;
 }
