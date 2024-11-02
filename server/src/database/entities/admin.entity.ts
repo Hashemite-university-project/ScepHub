@@ -8,7 +8,9 @@ import {
 } from 'sequelize-typescript';
 import { Users } from './user.entity';
 
-@Table
+@Table({
+  timestamps: true,
+})
 export class Admins extends Model {
   @ForeignKey(() => Users)
   @Column({ type: DataType.BIGINT })

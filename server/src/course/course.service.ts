@@ -12,6 +12,8 @@ import { Instructors } from 'src/database/entities/instructor.entity';
 import { Users } from 'src/database/entities/user.entity';
 import { Categories } from 'src/database/entities/category.entity';
 import { CreateContentDto } from './dto/create-content.dto';
+import { Contents } from 'src/database/entities/course-videos.entity';
+import { PaymentService } from 'src/payment/payment.service';
 
 @Injectable()
 export class CourseService {
@@ -19,9 +21,70 @@ export class CourseService {
     @Inject('COURSE_REPOSITORY') private readonly CourseModel: typeof Courses,
     @Inject('INSTRUCTOR_REPOSITORY')
     private readonly InstructorModel: typeof Instructors,
+    @Inject('CONTENT_REPOSITORY')
+    private readonly contentModel: typeof Contents,
+    private readonly paymentService: PaymentService,
     @Inject('CATEGORY_REPOSITORY')
     private readonly CategoryModel: typeof Categories,
   ) {}
+
+  async getAllCourses() {
+    try {
+      const allCourses = await this.CourseModel.findAll({
+        where: { is_deleted: false },
+        include: [
+          {
+            model: Instructors,
+            attributes: ['major'],
+            include: [
+              {
+                model: Users,
+                attributes: ['user_name'],
+              },
+            ],
+          },
+          {
+            model: Categories,
+            attributes: ['category_name'],
+          },
+        ],
+      });
+      return allCourses;
+    } catch (error) {
+      console.error(error);
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async getCourseDetails(courseID: string, studentID: string, role: any) {
+    try {
+      const course = await this.CourseModel.findByPk(courseID);
+      if (course.is_deleted === true) {
+        return 'This course has been deleted and is no longer available.';
+      }
+      const studentSubscription =
+        await this.paymentService.getSubscriptionStatus(studentID, role);
+      let course_content: any;
+      if (role !== '1' || studentSubscription.status === 'active') {
+        course_content = await this.contentModel.findAll({
+          where: {
+            course_id: courseID,
+          },
+        });
+      } else {
+        course_content = await this.contentModel.findOne({
+          where: {
+            course_id: courseID,
+          },
+          order: [['createdAt', 'ASC']],
+        });
+      }
+      return course_content;
+    } catch (error) {
+      console.error(error);
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
 
   async createNewCourse(
     createCourseDto: CreateCourseDto,
@@ -30,7 +93,7 @@ export class CourseService {
   ) {
     try {
       const instructor = await this.InstructorModel.findOne({
-        where: { user_id: instructorID },
+        where: { instructor_id: instructorID },
       });
       const newCourse = await this.CourseModel.create({
         course_name: createCourseDto.course_name,
@@ -38,7 +101,7 @@ export class CourseService {
         course_category: createCourseDto.course_category,
         course_img: course_img,
         created_at: new Date(),
-        course_instructor: instructor.dataValues.id,
+        course_instructor: instructor.dataValues.instructor_id,
       });
       return newCourse;
     } catch (error) {
@@ -47,9 +110,10 @@ export class CourseService {
     }
   }
 
-  async findAllCourses() {
+  async findAllInstructorCourse(instructorID: string) {
     try {
       const allCourses = await this.CourseModel.findAll({
+        where: { course_instructor: instructorID, is_deleted: false },
         include: [
           {
             model: Instructors,
@@ -62,9 +126,6 @@ export class CourseService {
             ],
           },
         ],
-        where: {
-          is_deleted: false,
-        },
       });
       return allCourses;
     } catch (error) {
@@ -98,32 +159,32 @@ export class CourseService {
     }
   }
 
-  async findOneCourse(id: string) {
-    try {
-      const course = await this.CourseModel.findByPk(id, {
-        include: [
-          {
-            model: Instructors,
-            attributes: ['major'],
-            include: [
-              {
-                model: Users,
-                attributes: ['user_name'],
-              },
-            ],
-          },
-          {
-            model: Categories,
-            attributes: ['category_name'],
-          },
-        ],
-      });
-      return course;
-    } catch (error) {
-      console.error(error);
-      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
+  //   async findOneCourse(id: string) {
+  //     try {
+  //       const course = await this.CourseModel.findByPk(id, {
+  //         include: [
+  //           {
+  //             model: Instructors,
+  //             attributes: ['major'],
+  //             include: [
+  //               {
+  //                 model: Users,
+  //                 attributes: ['user_name'],
+  //               },
+  //             ],
+  //           },
+  //           {
+  //             model: Categories,
+  //             attributes: ['category_name'],
+  //           },
+  //         ],
+  //       });
+  //       return course;
+  //     } catch (error) {
+  //       console.error(error);
+  //       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+  //     }
+  //   }
 
   async removeCourse(id: string) {
     try {
