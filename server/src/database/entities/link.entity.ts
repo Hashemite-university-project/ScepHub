@@ -15,7 +15,7 @@ export class Links extends Model {
   @Column(DataType.STRING)
   link_name: string;
 
-  @Column({ type: DataType.STRING, unique: true })
+  @Column({ type: DataType.STRING })
   link: string;
 
   @Column(DataType.STRING)

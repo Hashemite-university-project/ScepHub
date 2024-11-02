@@ -23,12 +23,6 @@ module.exports = {
           createdAt: new Date(),
           updatedAt: new Date(),
         },
-        {
-          role_id: 4,
-          role_name: 'client',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
       ],
       {},
     );

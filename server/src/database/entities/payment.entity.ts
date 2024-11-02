@@ -17,11 +17,8 @@ export class Payments extends Model {
   @Column({ type: DataType.BIGINT })
   user_id: bigint;
 
-  @Column(DataType.DECIMAL)
-  amount: number;
-
-  @Column(DataType.DATE)
-  payment_date: Date;
+  @Column(DataType.STRING)
+  stripe_sub_id: string;
 
   @Column(DataType.BIGINT)
   activate: bigint;

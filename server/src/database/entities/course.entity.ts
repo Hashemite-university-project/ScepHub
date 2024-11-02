@@ -26,9 +26,6 @@ export class Courses extends Model {
   @Column({ type: DataType.BIGINT })
   course_instructor: bigint;
 
-  @Column({ type: DataType.STRING, defaultValue: null })
-  tags: string;
-
   @Column({ type: DataType.TEXT, defaultValue: null })
   course_img: string;
 
@@ -45,10 +42,10 @@ export class Courses extends Model {
   @Column({ type: DataType.BIGINT })
   course_category: bigint;
 
-  @BelongsTo(() => Instructors, 'course_instructor')
+  @BelongsTo(() => Instructors, { foreignKey: 'course_instructor' })
   instructor: Instructors;
 
-  @BelongsTo(() => Categories)
+  @BelongsTo(() => Categories, 'course_category')
   category: Categories;
 
   @HasMany(() => Contents, { foreignKey: 'course_id' })

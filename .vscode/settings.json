@@ -5,5 +5,14 @@
     "editor.formatOnSave": true, // optional
     "editor.formatOnSaveMode": "file", // required to format on save
     "files.autoSave": "onFocusChange", // optional but recommended
-    "vs-code-prettier-eslint.prettierLast": false // set as "true" to run 'prettier' last not first
+    "vs-code-prettier-eslint.prettierLast": false,
+    "workbench.colorCustomizations": {
+        "sash.hoverBorder": "#1f6fd0",
+        "statusBar.background": "#1857a4",
+        "statusBar.foreground": "#e7e7e7",
+        "statusBarItem.hoverBackground": "#1f6fd0",
+        "statusBarItem.remoteBackground": "#1857a4",
+        "statusBarItem.remoteForeground": "#e7e7e7"
+    },
+    "peacock.color": "#1857a4" // set as "true" to run 'prettier' last not first
 }

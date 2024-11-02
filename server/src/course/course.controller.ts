@@ -28,6 +28,31 @@ import { CreateContentDto } from './dto/create-content.dto';
 export class CourseController {
   constructor(private readonly courseService: CourseService) {}
 
+  @ApiResponse({ status: 200, description: 'created successfully!' })
+  @UseGuards(AuthGuard)
+  @Get('allCourses')
+  async getAllCourses() {
+    const allCourses = await this.courseService.getAllCourses();
+    return allCourses;
+  }
+
+  @ApiResponse({ status: 200, description: 'created successfully!' })
+  @UseGuards(AuthGuard)
+  @Get('courseDetails/:id')
+  async getCourseDetails(
+    @Param('id') course_id: string,
+    @Req() Request: Request,
+  ) {
+    const studentID = Request['user'].user_id;
+    const role = Request['user'].role;
+    const allCourses = await this.courseService.getCourseDetails(
+      course_id,
+      studentID,
+      role,
+    );
+    return allCourses;
+  }
+
   @ApiResponse({ status: 201, description: 'created successfully!' })
   @ApiResponse({ status: 403, description: 'Invalid data provided' })
   @UseGuards(AuthGuard, RolesGuard)
@@ -60,9 +85,12 @@ export class CourseController {
     status: 200,
     description: 'search function or admin dashboard',
   })
-  @Get()
-  findAllCourses() {
-    return this.courseService.findAllCourses();
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.Instructor)
+  @Get('instructorCourses')
+  findAllInstructorCourse(@Req() Request: Request) {
+    const instructorID = Request['user'].user_id;
+    return this.courseService.findAllInstructorCourse(instructorID);
   }
 
   @ApiResponse({ status: 201 })
@@ -79,11 +107,11 @@ export class CourseController {
     return this.courseService.updateCourse(id, updateCourseDto, course_img);
   }
 
-  @ApiResponse({ status: 200 })
-  @Get(':id')
-  findOneCourse(@Param('id') id: string) {
-    return this.courseService.findOneCourse(id);
-  }
+  // @ApiResponse({ status: 200 })
+  // @Get(':id')
+  // findOneCourse(@Param('id') id: string) {
+  //   return this.courseService.findOneCourse(id);
+  // }
 
   @ApiResponse({ status: 201 })
   @UseGuards(AuthGuard, RolesGuard)
@@ -98,7 +126,7 @@ export class CourseController {
   @Roles(Role.Instructor)
   @UseInterceptors(FileInterceptor('file'), UploadInterceptor)
   @Post('content')
-  addContent(
+  createCourseContent(
     @Body() createContentDto: CreateContentDto,
     @Param('id') id: string,
   ) {
