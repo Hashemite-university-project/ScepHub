@@ -34,9 +34,8 @@ export class CategoryController {
   }
 
   @ApiResponse({ status: 200 })
-  @ApiResponse({ status: 401, description: 'Unauthorized "just for admins"' })
-  @UseGuards(AuthGuard, RolesGuard)
-  @Roles(Role.Admin)
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @UseGuards(AuthGuard)
   @Get()
   async findAllCategories() {
     const allCategories = await this.categoryService.findAllCategories();

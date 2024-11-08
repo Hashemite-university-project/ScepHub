@@ -10,6 +10,7 @@ import {
   Req,
   UseInterceptors,
   Put,
+  Query,
 } from '@nestjs/common';
 import { ProjectService } from './project.service';
 import { UpdateProjectDto } from './dto/update-project.dto';
@@ -68,6 +69,24 @@ export class ProjectController {
       updateProjectDto,
       project_img,
       projectID,
+    );
+  }
+
+  @ApiResponse({
+    status: 200,
+    description: 'Get all instructor projects with optional search',
+  })
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.Instructor, Role.Admin)
+  @Get('instructorProjects')
+  async getInstructorProjects(
+    @Req() Request: Request,
+    @Query('project_name') projectName?: string,
+  ) {
+    const instructorID = Request['user'].user_id;
+    return await this.projectService.getInstructorProjects(
+      instructorID,
+      projectName,
     );
   }
 
