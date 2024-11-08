@@ -19,6 +19,8 @@ import { Reports } from './entities/report.entity';
 import { Contactus } from './entities/contact-us.entity';
 import { ProjectParticipants } from './entities/Project-Participants.entity';
 import * as dotenv from 'dotenv';
+import { Enrollments } from './entities/enrollment.entity';
+import { Groups } from './entities/groups.entity';
 
 dotenv.config();
 
@@ -91,6 +93,8 @@ export const databaseProviders = [
           Reports,
           Contactus,
           ProjectParticipants,
+          Enrollments,
+          Groups,
         ]);
         await sequelize.sync({ alter: true });
       } catch (error) {

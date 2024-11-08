@@ -46,7 +46,6 @@ export class PaymentService {
       const subscription = await this.stripe.subscriptions.retrieve(
         studentStripeID.stripe_sub_id,
       );
-
       return {
         status: subscription.status,
         current_period_end: subscription.current_period_end,

@@ -29,7 +29,7 @@ export class Courses extends Model {
   @Column({ type: DataType.TEXT, defaultValue: null })
   course_img: string;
 
-  @Column({ type: DataType.DECIMAL, defaultValue: 0 })
+  @Column({ type: DataType.DECIMAL(10, 1), defaultValue: 0 })
   rating: number;
 
   @Column({ type: DataType.STRING, defaultValue: null })

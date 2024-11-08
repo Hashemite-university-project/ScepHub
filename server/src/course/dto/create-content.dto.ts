@@ -8,46 +8,36 @@ import {
 } from 'class-validator';
 
 export class CreateContentDto {
-  @IsNotEmpty({ message: 'Course name is required' })
-  @IsString({ message: 'Course name must be a string' })
-  @MinLength(6, { message: 'Course name must be at least 6 characters long' })
-  @MaxLength(30, {
-    message: 'Course name must be less than or equal to 30 characters long',
+  @IsNotEmpty({ message: 'video title is required' })
+  @IsString({ message: 'video title must be a string' })
+  @MinLength(6, { message: 'video title must be at least 6 characters long' })
+  @MaxLength(20, {
+    message: 'video title must be less than or equal to 20 characters long',
   })
   @ApiProperty({
-    description:
-      'Course name must be at least 6 characters and not over 30 characters',
+    description: 'this is the title for one section',
     type: 'string',
     required: true,
-    example: 'myName',
+    example: 'DOM JS and BOM',
   })
-  course_name: string;
+  video_title: string;
 
-  @IsNotEmpty({ message: 'Course description is required' })
   @IsString({ message: 'Course description must be a string' })
-  @MinLength(6, {
-    message: 'Course description must be at least 6 characters long',
-  })
-  @MaxLength(30, {
-    message:
-      'Course description must be less than or equal to 30 characters long',
-  })
   @ApiProperty({
     description:
-      'Course description must be at least 6 characters and not over 30 characters',
+      'video_description must be at least 6 characters and not over 30 characters',
     type: 'string',
     required: true,
-    example: 'This is a course description',
+    example: 'This is the video title description for more details',
   })
-  course_description: string;
+  video_description: string;
 
-  @IsNotEmpty({ message: 'Category is required' })
-  @IsInt({ message: 'Category must be an integer' })
+  @IsNotEmpty({ message: 'course id required' })
   @ApiProperty({
-    description: 'Category ID must be a valid integer',
-    type: 'integer',
+    description: 'This value is from the query',
+    type: 'number',
     required: true,
-    example: 1,
+    example: '1',
   })
-  course_category: number;
+  course_id: number;
 }

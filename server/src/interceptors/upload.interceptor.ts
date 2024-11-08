@@ -16,7 +16,7 @@ export class UploadInterceptor implements NestInterceptor {
     next: CallHandler,
   ): Promise<Observable<any>> {
     const request = context.switchToHttp().getRequest();
-    const file = request.file;
+    const file = await request.file;
     if (file) {
       const downloadUrl = await this.uploadService.upload(file);
       request['fileUrl'] = downloadUrl;

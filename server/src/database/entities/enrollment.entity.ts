@@ -22,9 +22,6 @@ export class Enrollments extends Model {
   @Column({ type: DataType.BIGINT })
   course_id: bigint;
 
-  @Column({ type: DataType.DATE, defaultValue: DataType.NOW })
-  enrollment_date: Date;
-
   @BelongsTo(() => Users)
   student: Users;
 

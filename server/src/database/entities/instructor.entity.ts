@@ -64,7 +64,7 @@ export class Instructors extends Model<Instructors> {
   user_cv: string;
 
   @BelongsTo(() => Users, { onDelete: 'CASCADE' })
-  user: Users;
+  instructor: Users;
 
   @HasMany(() => Projects, { foreignKey: 'project_instructor' })
   projects: Projects[];

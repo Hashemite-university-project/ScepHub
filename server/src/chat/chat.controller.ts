@@ -1,34 +1,26 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  ParseIntPipe,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ChatService } from './chat.service';
-import { CreateChatDto } from './dto/create-chat.dto';
-import { UpdateChatDto } from './dto/update-chat.dto';
+import { AuthGuard } from 'src/auth/auth.guard';
 
-@Controller('chat')
+@Controller('messages')
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
-  @Post()
-  create(@Body() createChatDto: CreateChatDto) {
-    return this.chatService.create(createChatDto);
-  }
-
-  @Get()
-  findAll() {
-    return this.chatService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.chatService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateChatDto: UpdateChatDto) {
-    return this.chatService.update(+id, updateChatDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.chatService.remove(+id);
+  @UseGuards(AuthGuard)
+  @Get('history')
+  async getMessageHistory(
+    @Req() Request: Request,
+    @Query('userID2') userID2: number,
+  ) {
+    console.log(userID2);
+    const userID1 = Request['user'].user_id;
+    return this.chatService.getMessagesBetweenUsers(userID1, userID2);
   }
 }

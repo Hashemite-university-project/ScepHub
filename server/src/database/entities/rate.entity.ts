@@ -13,7 +13,7 @@ export class Ratings extends Model {
   @Column({ type: DataType.BIGINT, primaryKey: true, autoIncrement: true })
   rate_id: bigint;
 
-  @Column(DataType.DECIMAL)
+  @Column({ type: DataType.DECIMAL(10, 1), defaultValue: 0 })
   rating: number;
 
   @ForeignKey(() => Users)

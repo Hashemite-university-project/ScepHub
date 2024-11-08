@@ -39,6 +39,9 @@ export class UserController {
   ) {
     try {
       const newStudent = await this.userService.StudentSignUp(createStudentDto);
+      if (!newStudent.role) {
+        return newStudent;
+      }
       response.cookie('access_token', newStudent.access_token);
       response.cookie('refresh_token', newStudent.refreshToken);
       response.status(HttpStatus.CREATED).json({
@@ -64,6 +67,9 @@ export class UserController {
     try {
       const newInstructor =
         await this.userService.instructorSignUp(createInstructorDto);
+      if (!newInstructor.role) {
+        return newInstructor;
+      }
       response.cookie('access_token', newInstructor.token);
       response.cookie('refresh_token', newInstructor.refreshToken);
       response.status(HttpStatus.CREATED).json({
