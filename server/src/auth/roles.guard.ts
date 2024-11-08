@@ -19,6 +19,7 @@ export class RolesGuard implements CanActivate {
     if (!roles) {
       return true;
     }
+
     const request = context.switchToHttp().getRequest();
     const user = request.user;
     const userFromDb = await this.UserModel.findByPk(user.user_id);

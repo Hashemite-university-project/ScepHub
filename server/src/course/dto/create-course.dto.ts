@@ -1,11 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsNotEmpty,
-  IsString,
-  IsInt,
-  MinLength,
-  MaxLength,
-} from 'class-validator';
+import { IsNotEmpty, IsString, MinLength, MaxLength } from 'class-validator';
 
 export class CreateCourseDto {
   @IsNotEmpty({ message: 'Course name is required' })
@@ -42,7 +36,6 @@ export class CreateCourseDto {
   course_description: string;
 
   @IsNotEmpty({ message: 'Category is required' })
-  @IsInt({ message: 'Category must be an integer' })
   @ApiProperty({
     description: 'Category ID must be a valid integer',
     type: 'integer',

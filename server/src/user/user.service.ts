@@ -41,6 +41,15 @@ export class UserService {
       const hashedPassword = await this.bcryptService.hash(
         createStudentDto.password,
       );
+      const userAccount = await this.UserModel.findOne({
+        where: {
+          user_email: createStudentDto.user_email,
+          phone_number: createStudentDto.phone_number,
+        },
+      });
+      if (userAccount) {
+        throw new ConflictException();
+      }
       const newUser = await this.UserModel.create(
         {
           user_name: createStudentDto.user_name,
@@ -66,18 +75,30 @@ export class UserService {
         newUser.dataValues.user_email,
         newUser.dataValues.role,
       );
-      const role = newUser.role;
-      return { access_token, refreshToken, role };
+      return {
+        status: 'success',
+        access_token,
+        refreshToken,
+        role: newUser.role,
+      };
     } catch (error) {
       await transaction.rollback();
-      console.log(error);
-      //   throw new ConflictException();
+      console.error(error);
     }
   }
 
   async instructorSignUp(createInstructorDto: CreateUserDto) {
     const transaction = await this.sequelize.transaction();
     try {
+      const userAccount = await this.UserModel.findOne({
+        where: {
+          user_email: createInstructorDto.user_email,
+          phone_number: createInstructorDto.phone_number,
+        },
+      });
+      if (userAccount) {
+        throw new ConflictException();
+      }
       const hashedPassword = await this.bcryptService.hash(
         createInstructorDto.password,
       );
@@ -114,7 +135,6 @@ export class UserService {
     } catch (error) {
       await transaction.rollback();
       console.log(error);
-      throw new ConflictException();
     }
   }
 

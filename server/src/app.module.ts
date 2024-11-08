@@ -5,7 +5,6 @@ import { CourseModule } from './course/course.module';
 import { ProjectModule } from './project/project.module';
 import { ChatModule } from './chat/chat.module';
 import { PaymentModule } from './payment/payment.module';
-import { RatingModule } from './rating/rating.module';
 import { ContactUsModule } from './contact-us/contact-us.module';
 import { ReportModule } from './report/report.module';
 import { DatabaseModule } from './database/database.module';
@@ -20,7 +19,6 @@ import { CategoryModule } from './category/category.module';
     ProjectModule,
     ChatModule,
     PaymentModule,
-    RatingModule,
     ContactUsModule,
     ReportModule,
     DatabaseModule,

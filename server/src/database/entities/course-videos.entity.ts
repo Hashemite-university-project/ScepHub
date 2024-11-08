@@ -30,6 +30,9 @@ export class Contents extends Model<Contents> {
   @Column({ type: DataType.BIGINT })
   course_id: bigint;
 
+  @Column({ type: DataType.BOOLEAN, defaultValue: false })
+  is_deleted;
+
   @BelongsTo(() => Courses)
   course: Courses;
 }

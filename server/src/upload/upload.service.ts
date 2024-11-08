@@ -29,6 +29,6 @@ export class UploadService {
     await fileObject.save(file.buffer, {
       contentType: file.mimetype,
     });
-    return this.getFileDownloadUrl(fileName);
+    return await this.getFileDownloadUrl(fileName);
   }
 }

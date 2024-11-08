@@ -43,8 +43,14 @@ export class Projects extends Model {
   @Column(DataType.DATE)
   end_date: Date;
 
+  @Column(DataType.JSON)
+  required_skills: string[];
+
   @BelongsTo(() => Categories)
   category: Categories;
+
+  @Column({ type: DataType.BOOLEAN, defaultValue: false })
+  is_deleted: boolean;
 
   @HasMany(() => ProjectParticipants, { foreignKey: 'project_id' })
   participants: ProjectParticipants[];
