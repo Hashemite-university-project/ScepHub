@@ -88,6 +88,33 @@ export class ProjectService {
     }
   }
 
+  async getInstructorProjects(instructorID: string, projectName?: string) {
+    try {
+      const query = {
+        where: {
+          project_instructor: instructorID,
+          is_deleted: false,
+          ...(projectName && {
+            project_name: {
+              [Op.like]: `%${projectName}%`,
+            },
+          }),
+        },
+        include: [
+          {
+            model: Categories,
+            as: 'category',
+          },
+        ],
+      };
+      const projects = await this.ProjectModel.findAll(query);
+      return projects;
+    } catch (error) {
+      console.error(error);
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
   async getProjectStudents(userID: string) {
     try {
       const studentProjects = await this.participantsModel.findAll({

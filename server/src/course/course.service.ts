@@ -190,6 +190,7 @@ export class CourseService {
         { is_deleted: true },
         { where: { course_id: id } },
       );
+
       if (numberOfAffectedRows === 0) {
         throw new HttpException('Course not found', HttpStatus.NOT_FOUND);
       }
@@ -206,13 +207,13 @@ export class CourseService {
     vidURL: string,
   ) {
     try {
-      await this.contentModel.create({
+      const newContent = await this.contentModel.create({
         video_title: createContentDto.video_title,
         video_description: createContentDto.video_description,
         video_url: vidURL,
         course_id: courseID,
       });
-      return 'Content created successfully!';
+      return newContent;
     } catch (error) {
       console.error(error);
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
