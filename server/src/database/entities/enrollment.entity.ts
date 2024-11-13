@@ -22,6 +22,9 @@ export class Enrollments extends Model {
   @Column({ type: DataType.BIGINT })
   course_id: bigint;
 
+  @Column({ type: DataType.BOOLEAN, defaultValue: false })
+  payed_for: boolean;
+
   @BelongsTo(() => Users)
   student: Users;
 

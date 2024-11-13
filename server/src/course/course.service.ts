@@ -8,7 +8,7 @@ import { Categories } from 'src/database/entities/category.entity';
 import { CreateContentDto } from './dto/create-content.dto';
 import { Contents } from 'src/database/entities/course-videos.entity';
 import { PaymentService } from 'src/payment/payment.service';
-import { Op } from 'sequelize';
+import { Op, where } from 'sequelize';
 import { UpdateContentDto } from './dto/update-content.dto';
 import { Enrollments } from 'src/database/entities/enrollment.entity';
 import { Ratings } from 'src/database/entities/rate.entity';
@@ -111,8 +111,28 @@ export class CourseService {
         course_img: course_img,
         created_at: new Date(),
         course_instructor: instructor.id,
+        is_deleted: true,
       });
       return newCourse;
+    } catch (error) {
+      console.error(error);
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async activateCourse(courseID: string) {
+    try {
+      await this.CourseModel.update(
+        {
+          is_deleted: false,
+        },
+        {
+          where: {
+            course_id: courseID,
+          },
+        },
+      );
+      return 'The course activate successfully!';
     } catch (error) {
       console.error(error);
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -126,7 +146,6 @@ export class CourseService {
       });
       const whereClause: any = {
         course_instructor: instructor_user.id,
-        is_deleted: false,
       };
       if (courseName) {
         whereClause.course_name = {
@@ -186,15 +205,26 @@ export class CourseService {
 
   async removeCourse(id: string) {
     try {
-      const [numberOfAffectedRows] = await this.CourseModel.update(
-        { is_deleted: true },
-        { where: { course_id: id } },
-      );
-
-      if (numberOfAffectedRows === 0) {
-        throw new HttpException('Course not found', HttpStatus.NOT_FOUND);
+      const myCourse = await this.CourseModel.findByPk(id);
+      if (myCourse.is_deleted === false) {
+        const [numberOfAffectedRows] = await this.CourseModel.update(
+          { is_deleted: true },
+          { where: { course_id: id } },
+        );
+        if (numberOfAffectedRows === 0) {
+          throw new HttpException('Course not found', HttpStatus.NOT_FOUND);
+        }
+        return { message: 'Course marked as deleted successfully' };
+      } else {
+        const [numberOfAffectedRows] = await this.CourseModel.update(
+          { is_deleted: false },
+          { where: { course_id: id } },
+        );
+        if (numberOfAffectedRows === 0) {
+          throw new HttpException('Course not found', HttpStatus.NOT_FOUND);
+        }
+        return { message: 'Course updated successfully' };
       }
-      return { message: 'Course marked as deleted successfully' };
     } catch (error) {
       console.error(error);
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -275,6 +305,10 @@ export class CourseService {
       const courseList = await this.enrollmentsModel.findOne({
         where: { student_id: studentID, course_id: courseID },
       });
+      const courseToList = await this.CourseModel.findByPk(courseID);
+      if (courseToList.is_deleted === true) {
+        return 'this course was deleted from instructor';
+      }
       if (!courseList) {
         await this.enrollmentsModel.create({
           student_id: studentID,
@@ -322,7 +356,7 @@ export class CourseService {
   async addRate(
     studentID: string,
     CourseID: bigint,
-    role: string,
+    role: number,
     newRating: number,
   ) {
     try {
@@ -335,6 +369,9 @@ export class CourseService {
             course_id: CourseID,
           },
         });
+        if (myList.dataValues.payed_for === false) {
+          return 'You need to pay for the course to rate it!';
+        }
         if (myList) {
           const rating = await this.ratingsModel.findOne({
             where: {
@@ -366,7 +403,7 @@ export class CourseService {
             return 'Rating submitted successfully!';
           }
         } else {
-          return 'You don`t have this course on you list!';
+          return 'You don`t have this course on your list!';
         }
       } else {
         return 'You don`t have subscription!';

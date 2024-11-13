@@ -3,9 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
-  Delete,
   UseGuards,
   Req,
   UseInterceptors,
@@ -92,18 +90,6 @@ export class ProjectController {
 
   @ApiResponse({
     status: 200,
-    description: 'just will return the joined projects for the student',
-  })
-  @UseGuards(AuthGuard, RolesGuard)
-  @Roles(Role.Student)
-  @Get('student/enrolledProjects')
-  async getProjectStudents(@Req() Request: Request) {
-    const userID = Request['user'].user_id;
-    return await this.projectService.getProjectStudents(userID);
-  }
-
-  @ApiResponse({
-    status: 200,
     description:
       'this is will get all details from project to instructor to students model',
   })
@@ -113,4 +99,28 @@ export class ProjectController {
   async getProjectDetails(@Param('id') projectID: string) {
     return await this.projectService.getProjectDetails(projectID);
   }
+
+  @ApiResponse({
+    status: 200,
+    description: 'just will return the joined projects for the student',
+  })
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.Student)
+  @Get('student/enrolledProjects')
+  async getProjectStudents(@Req() Request: Request) {
+    const StudentID = Request['user'].user_id;
+    return await this.projectService.getProjectStudents(StudentID);
+  }
+
+  //   @ApiResponse({
+  //     status: 200,
+  //     description: 'get the students request from the instructor',
+  //   })
+  //   @UseGuards(AuthGuard, RolesGuard)
+  //   @Roles(Role.Instructor)
+  //   @Get('instructor/enrolledProjects')
+  //   async getStudentsRequests(@Req() Request: Request) {
+  //     const StudentID = Request['user'].user_id;
+  //     return await this.projectService.getStudentsRequests(StudentID);
+  //   }
 }

@@ -21,6 +21,7 @@ import { ProjectParticipants } from './entities/Project-Participants.entity';
 import * as dotenv from 'dotenv';
 import { Enrollments } from './entities/enrollment.entity';
 import { Groups } from './entities/groups.entity';
+import { GroupMessages } from './entities/group.entitiy';
 
 dotenv.config();
 
@@ -95,6 +96,7 @@ export const databaseProviders = [
           ProjectParticipants,
           Enrollments,
           Groups,
+          GroupMessages,
         ]);
         await sequelize.sync({ alter: true });
       } catch (error) {

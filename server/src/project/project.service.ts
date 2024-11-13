@@ -9,6 +9,7 @@ import { Projects } from 'src/database/entities/project.entity';
 import { ProjectParticipants } from 'src/database/entities/Project-Participants.entity';
 import { Op } from 'sequelize';
 import { Categories } from 'src/database/entities/category.entity';
+import { Groups } from 'src/database/entities/groups.entity';
 
 @Injectable()
 export class ProjectService {
@@ -22,6 +23,8 @@ export class ProjectService {
     private readonly InstructorModel: typeof Instructors,
     @Inject('PROJECTPARTICIPANTS')
     private readonly participantsModel: typeof ProjectParticipants,
+    @Inject('GROUPS')
+    private readonly groupsModel: typeof Groups,
     @Inject('SEQUELIZE') private readonly sequelize: Sequelize,
   ) {}
 
@@ -31,22 +34,42 @@ export class ProjectService {
     instructorID: string,
   ) {
     try {
+      const InstructorIDFromInstructorModel =
+        await this.InstructorModel.findOne({
+          where: {
+            instructor_id: instructorID,
+          },
+        });
       const projectName = await this.ProjectModel.findOne({
         where: { project_name: createProjectDto.project_name },
       });
       if (projectName) {
         return 'The project name is already exist!';
       }
-      await this.ProjectModel.create({
+      const newProject = await this.ProjectModel.create({
         project_name: createProjectDto.project_name,
         project_description: createProjectDto.project_description,
         project_img: project_img,
-        project_instructor: instructorID,
+        project_instructor: InstructorIDFromInstructorModel.id,
         project_category: createProjectDto.project_category,
         start_date: createProjectDto.start_date || null,
         end_date: createProjectDto.end_date,
         required_skills: createProjectDto.required_skills,
       });
+      const ProjectGroup = await this.groupsModel.create({
+        group_name: createProjectDto.project_name,
+        group_project: newProject.project_id,
+      });
+      await this.UserModel.update(
+        {
+          group_id: ProjectGroup.group_id,
+        },
+        {
+          where: {
+            user_id: instructorID,
+          },
+        },
+      );
       return 'project Created Successfully!';
     } catch (error) {
       console.log(error);
@@ -90,9 +113,15 @@ export class ProjectService {
 
   async getInstructorProjects(instructorID: string, projectName?: string) {
     try {
+      const instructorIDFromInstructorModel =
+        await this.InstructorModel.findOne({
+          where: {
+            instructor_id: instructorID,
+          },
+        });
       const query = {
         where: {
-          project_instructor: instructorID,
+          project_instructor: instructorIDFromInstructorModel.id,
           is_deleted: false,
           ...(projectName && {
             project_name: {
@@ -115,37 +144,42 @@ export class ProjectService {
     }
   }
 
-  async getProjectStudents(userID: string) {
+  async getProjectStudents(StudentID: string) {
     try {
-      const studentProjects = await this.participantsModel.findAll({
+      const projectsID = await this.participantsModel.findAll({
         where: Sequelize.where(
           Sequelize.fn(
             'JSON_CONTAINS',
             Sequelize.col('joined_Students'),
-            Sequelize.literal(`'["${userID}"]'`),
+            Sequelize.literal(`'[${StudentID}]'`),
           ),
           true,
         ),
+      });
+      if (!projectsID || projectsID.length === 0) {
+        return [];
+      }
+      const projectIds = projectsID.map(
+        (participant) => participant.project_id,
+      );
+      const studentProjects = await this.ProjectModel.findAll({
+        where: {
+          project_id: projectIds,
+        },
         include: [
           {
-            model: Projects,
-            as: 'project',
+            model: Instructors,
+            as: 'instructor',
             include: [
               {
-                model: Instructors,
+                model: Users,
                 as: 'instructor',
-                include: [
-                  {
-                    model: Users,
-                    as: 'user',
-                  },
-                ],
-              },
-              {
-                model: Categories,
-                as: 'category',
               },
             ],
+          },
+          {
+            model: Categories,
+            as: 'category',
           },
         ],
       });

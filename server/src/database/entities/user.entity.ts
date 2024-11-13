@@ -5,6 +5,8 @@ import {
   DataType,
   HasMany,
   HasOne,
+  ForeignKey,
+  BelongsTo,
 } from 'sequelize-typescript';
 import { Admins } from './admin.entity';
 import { Students } from './student.entity';
@@ -12,6 +14,7 @@ import { Instructors } from './instructor.entity';
 import { Messages } from './message.entity';
 import { Ratings } from './rate.entity';
 import { Payments } from './payment.entity';
+import { Groups } from './groups.entity';
 
 @Table({
   tableName: 'users',
@@ -42,6 +45,13 @@ export class Users extends Model {
 
   @Column({ type: DataType.BOOLEAN, defaultValue: false })
   is_deleted: boolean;
+
+  @ForeignKey(() => Groups)
+  @Column({ type: DataType.ARRAY(DataType.BIGINT) })
+  group_id: bigint[];
+
+  @BelongsTo(() => Groups, 'group_id')
+  group: Groups;
 
   @HasOne(() => Admins)
   admin: Admins;

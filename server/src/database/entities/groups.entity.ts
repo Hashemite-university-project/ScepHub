@@ -1,5 +1,13 @@
-import { Table, Column, Model, DataType, HasMany } from 'sequelize-typescript';
+import {
+  Table,
+  Column,
+  Model,
+  DataType,
+  HasMany,
+  ForeignKey,
+} from 'sequelize-typescript';
 import { Users } from './user.entity';
+import { Projects } from './project.entity';
 
 @Table
 export class Groups extends Model {
@@ -8,6 +16,10 @@ export class Groups extends Model {
 
   @Column(DataType.STRING)
   group_name: string;
+
+  @ForeignKey(() => Projects)
+  @Column(DataType.BIGINT)
+  group_project: bigint;
 
   @HasMany(() => Users, 'group_id')
   members: Users[];
