@@ -42,11 +42,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('sendMessage')
   async handleSendMessage(
     client: Socket,
-    payload: { sender_id: number; receiver_id: number; message: string },
+    payload: { receiver_id: number; message: string },
   ) {
+    const senderId = Array.from(this.connections.entries()).find(
+      ([userId, clientId]) => clientId === client.id,
+    )?.[0];
     const receiverClientId = this.connections.get(payload.receiver_id);
     if (receiverClientId) {
-      const message = await this.chatService.createMessage(payload);
+      const message = await this.chatService.createMessage(senderId, payload);
       this.server.to(receiverClientId).emit('receiveMessage', message);
       console.log(`Message sent to user ${payload.receiver_id}`);
     } else {
@@ -55,13 +58,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('fetchMessages')
-  async handleFetchMessages(
-    client: Socket,
-    payload: { userId1: number; userId2: number },
-  ) {
+  async handleFetchMessages(client: Socket, payload: { userId2: number }) {
     try {
+      const senderId = Array.from(this.connections.entries()).find(
+        ([userId, clientId]) => clientId === client.id,
+      )?.[0];
       const messages = await this.chatService.getMessagesBetweenUsers(
-        payload.userId1,
+        senderId,
         payload.userId2,
       );
       client.emit('messageHistory', messages);
@@ -70,42 +73,58 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  //   @SubscribeMessage('sendGroupMessage')
-  //   async handleSendGroupMessage(
-  //     client: Socket,
-  //     payload: { sender_id: number; group_id: number; message: string },
-  //   ) {
-  //     const group = await this.chatService.getGroupById(payload.group_id);
-  //     if (group) {
-  //       const message = await this.chatService.createGroupMessage(payload);
-  //       // Emit to all members of the group
-  //       const groupMembers = group.members;
-  //       groupMembers.forEach((member) => {
-  //         const receiverClientId = this.connections.get(member.user_id);
-  //         if (receiverClientId) {
-  //           this.server.to(receiverClientId).emit('receiveGroupMessage', message);
-  //         }
-  //       });
-  //       console.log(`Group message sent to group ${payload.group_id}`);
-  //     } else {
-  //       console.log(`Group ${payload.group_id} not found`);
-  //     }
-  //   }
+  @SubscribeMessage('sendGroupMessage')
+  async handleSendGroupMessage(
+    client: Socket,
+    payload: { group_id: number; message: string },
+  ) {
+    let senderId = Array.from(this.connections.entries()).find(
+      ([userId, clientId]) => clientId === client.id,
+    )?.[0];
+    console.log(senderId);
+    if (typeof senderId === 'bigint') {
+      senderId = Number(senderId);
+    }
+    const group = await this.chatService.getGroupById(payload.group_id);
+    if (group) {
+      const message = await this.chatService.createGroupMessage(
+        senderId,
+        payload,
+      );
+      const groupMembers = group.members;
+      groupMembers.forEach((member) => {
+        console.log(member);
+        const receiverClientId = this.connections.get(
+          typeof member.dataValues.user_id === 'bigint'
+            ? Number(member.dataValues.user_id)
+            : member.dataValues.user_id,
+        );
+        if (receiverClientId) {
+          this.server.to(receiverClientId).emit('receiveGroupMessage', message);
+        }
+      });
+      console.log(`Group message sent to group ${payload.group_id}`);
+    } else {
+      console.log(
+        `Group ${payload.group_id} not found or user not in the group`,
+      );
+    }
+  }
 
-  //   @SubscribeMessage('fetchGroupMessages')
-  //   async handleFetchGroupMessages(
-  //     client: Socket,
-  //     payload: { group_id: number },
-  //   ) {
-  //     try {
-  //       const messages = await this.chatService.getGroupMessages(
-  //         payload.group_id,
-  //       );
-  //       client.emit('groupMessageHistory', messages);
-  //     } catch (error) {
-  //       console.log(error);
-  //     }
-  //   }
+  @SubscribeMessage('fetchGroupMessages')
+  async handleFetchGroupMessages(
+    client: Socket,
+    payload: { group_id: number },
+  ) {
+    try {
+      const messages = await this.chatService.getGroupMessages(
+        payload.group_id,
+      );
+      client.emit('groupMessageHistory', messages);
+    } catch (error) {
+      console.log(error);
+    }
+  }
 
   private async getUserIdFromClient(client: Socket) {
     const tokenHeader = client.handshake.headers.token;

@@ -13,8 +13,6 @@ module.exports = {
           user_email: 'main_admin_account@gmail.com',
           password: adminPassword,
           role: 3,
-          createdAt: new Date(),
-          updatedAt: new Date(),
         },
       ],
       {},

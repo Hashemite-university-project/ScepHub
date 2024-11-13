@@ -37,6 +37,9 @@ export class Projects extends Model {
   @Column({ type: DataType.BIGINT })
   project_category: bigint;
 
+  @Column({ type: DataType.BOOLEAN, defaultValue: true })
+  active: boolean;
+
   @Column(DataType.DATE)
   start_date: Date;
 

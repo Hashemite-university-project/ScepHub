@@ -26,8 +26,11 @@ export class PaymentController {
   async createCheckoutSession(@Req() request: Request) {
     try {
       const userID = request['user'].user_id;
-      const sessionUrl =
-        await this.paymentService.createCheckoutSession(userID);
+      const role = request['user'].role;
+      const sessionUrl = await this.paymentService.createCheckoutSession(
+        userID,
+        role,
+      );
       return { url: sessionUrl };
     } catch (error) {
       console.error(error);

@@ -8,6 +8,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { Request } from 'express';
+import { Enrollments } from 'src/database/entities/enrollment.entity';
 import { Payments } from 'src/database/entities/payment.entity';
 import Stripe from 'stripe';
 
@@ -17,6 +18,8 @@ export class WebhookController {
 
   constructor(
     @Inject('PAYMENTS') private readonly paymentModel: typeof Payments,
+    @Inject('ENROLLMENTS')
+    private readonly enrollmentsModel: typeof Enrollments,
   ) {
     this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
   }
@@ -40,12 +43,21 @@ export class WebhookController {
       console.error(`Webhook signature verification failed: ${err.message}`);
       return;
     }
-
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
       const userId = session.metadata.user_id;
       const subscriptionId = session.subscription;
       await this.saveSubscriptionId(subscriptionId, userId);
+      await this.enrollmentsModel.update(
+        {
+          payed_for: true,
+        },
+        {
+          where: {
+            student_id: userId,
+          },
+        },
+      );
     }
   }
 

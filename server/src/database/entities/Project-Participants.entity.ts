@@ -20,6 +20,9 @@ export class ProjectParticipants extends Model {
   @Column({ type: DataType.JSON })
   joined_Students: bigint[];
 
+  @Column({ type: DataType.JSON })
+  students_requests: bigint[];
+
   @BelongsTo(() => Projects)
   project: Projects;
 }

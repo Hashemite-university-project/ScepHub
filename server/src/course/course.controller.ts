@@ -108,6 +108,17 @@ export class CourseController {
     );
   }
 
+  @ApiResponse({
+    status: 200,
+    description: 'this is make the course active and seen by all members',
+  })
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.Instructor)
+  @Put('activateCourse/:id')
+  activateCourse(@Req() Request: Request, @Param('id') courseID?: string) {
+    return this.courseService.activateCourse(courseID);
+  }
+
   @ApiResponse({ status: 201 })
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(Role.Instructor)

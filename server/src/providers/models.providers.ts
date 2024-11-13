@@ -4,6 +4,8 @@ import { Contactus } from 'src/database/entities/contact-us.entity';
 import { Contents } from 'src/database/entities/course-videos.entity';
 import { Courses } from 'src/database/entities/course.entity';
 import { Enrollments } from 'src/database/entities/enrollment.entity';
+import { GroupMessages } from 'src/database/entities/group.entitiy';
+import { Groups } from 'src/database/entities/groups.entity';
 import { Instructors } from 'src/database/entities/instructor.entity';
 import { Messages } from 'src/database/entities/message.entity';
 import { Payments } from 'src/database/entities/payment.entity';
@@ -69,5 +71,13 @@ export const modelsProviders = [
   {
     provide: 'MESSAGES',
     useValue: Messages,
+  },
+  {
+    provide: 'GROUPS',
+    useValue: Groups,
+  },
+  {
+    provide: 'GROUPMESSAGES',
+    useValue: GroupMessages,
   },
 ];
