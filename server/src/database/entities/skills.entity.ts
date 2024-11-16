@@ -3,25 +3,22 @@ import {
   Column,
   Model,
   DataType,
-  BelongsTo,
   ForeignKey,
+  BelongsTo,
 } from 'sequelize-typescript';
 import { Students } from './student.entity';
 
 @Table
-export class Links extends Model {
+export class Skills extends Model {
   @Column({ type: DataType.BIGINT, primaryKey: true, autoIncrement: true })
-  link_id: bigint;
+  skill_id: bigint;
 
-  @Column({ type: DataType.STRING, allowNull: false })
-  link_name: string;
-
-  @Column({ type: DataType.STRING, allowNull: false })
-  link: string;
+  @Column({ type: DataType.STRING, allowNull: true })
+  skill_name: string;
 
   @ForeignKey(() => Students)
-  @Column({ type: DataType.BIGINT })
-  user_link: bigint;
+  @Column({ type: DataType.BIGINT, allowNull: true })
+  user_id: bigint;
 
   @BelongsTo(() => Students)
   student: Students;

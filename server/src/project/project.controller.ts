@@ -112,15 +112,26 @@ export class ProjectController {
     return await this.projectService.getProjectStudents(StudentID);
   }
 
-  //   @ApiResponse({
-  //     status: 200,
-  //     description: 'get the students request from the instructor',
-  //   })
-  //   @UseGuards(AuthGuard, RolesGuard)
-  //   @Roles(Role.Instructor)
-  //   @Get('instructor/enrolledProjects')
-  //   async getStudentsRequests(@Req() Request: Request) {
-  //     const StudentID = Request['user'].user_id;
-  //     return await this.projectService.getStudentsRequests(StudentID);
-  //   }
+  @ApiResponse({
+    status: 200,
+    description: 'get the students request from the instructor',
+  })
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.Instructor)
+  @Get('instructor/studentRequests/:id')
+  async getStudentsRequests(
+    @Req() Request: Request,
+    @Param('id') projectID: string,
+  ) {
+    return await this.projectService.getStudentsRequests(projectID);
+  }
+
+  @ApiResponse({
+    status: 200,
+    description: 'for the home page view',
+  })
+  @Get('topProjects')
+  async topProjects(@Req() Request: Request) {
+    return await this.projectService.topProjects();
+  }
 }

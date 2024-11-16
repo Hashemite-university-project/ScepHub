@@ -413,4 +413,73 @@ export class CourseService {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+
+  async topCoursesRate() {
+    try {
+      const topRatedCourses = await this.CourseModel.findAll({
+        where: {
+          is_deleted: false,
+        },
+        limit: 4,
+        order: [['rating', 'DESC']],
+        include: [
+          {
+            model: Categories,
+          },
+          {
+            model: Instructors,
+            as: 'instructor',
+            include: [
+              {
+                model: Users,
+              },
+            ],
+          },
+        ],
+      });
+      return topRatedCourses;
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async coursePage(courseID: string) {
+    try {
+      const courseDetails = await this.CourseModel.findOne({
+        where: {
+          course_id: courseID,
+        },
+        include: [
+          {
+            model: Categories,
+          },
+          {
+            model: Instructors,
+            include: [
+              {
+                model: Users,
+              },
+            ],
+          },
+        ],
+      });
+      const courseContent = await this.contentModel.findAll({
+        where: {
+          course_id: courseID,
+        },
+      });
+      const enrollments = await this.enrollmentsModel.findAll({
+        where: {
+          course_id: courseID,
+        },
+      });
+      return {
+        course: courseDetails,
+        content: courseContent,
+        enrollments: enrollments.length,
+      };
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
 }

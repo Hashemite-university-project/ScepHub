@@ -4,7 +4,7 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 import { Instructors } from 'src/database/entities/instructor.entity';
 import { Students } from 'src/database/entities/student.entity';
 import { Users } from 'src/database/entities/user.entity';
-import { Sequelize } from 'sequelize';
+import { col, fn, Sequelize } from 'sequelize';
 import { Projects } from 'src/database/entities/project.entity';
 import { ProjectParticipants } from 'src/database/entities/Project-Participants.entity';
 import { Op } from 'sequelize';
@@ -63,6 +63,12 @@ export class ProjectService {
       await this.UserModel.update(
         {
           group_id: ProjectGroup.group_id,
+          chat_groups: Sequelize.fn(
+            'JSON_ARRAY_APPEND',
+            Sequelize.col('chat_groups'),
+            '$',
+            ProjectGroup.group_id,
+          ),
         },
         {
           where: {
@@ -245,6 +251,34 @@ export class ProjectService {
       return { projectDetails, participants };
     } catch (error) {
       console.log('Error in getProjectDetails:', error);
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async getStudentsRequests(projectID: string) {
+    try {
+      const studentsRequests = await this.participantsModel.findByPk(projectID);
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async topProjects() {
+    try {
+      const topProjects = await this.ProjectModel.findAll({
+        where: {
+          is_deleted: false,
+          active: true,
+        },
+        limit: 6,
+        include: {
+          model: ProjectParticipants,
+          as: 'participants',
+        },
+      });
+      return topProjects;
+    } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }

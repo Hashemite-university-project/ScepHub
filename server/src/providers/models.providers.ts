@@ -4,6 +4,7 @@ import { Contactus } from 'src/database/entities/contact-us.entity';
 import { Contents } from 'src/database/entities/course-videos.entity';
 import { Courses } from 'src/database/entities/course.entity';
 import { Enrollments } from 'src/database/entities/enrollment.entity';
+import { Feedback } from 'src/database/entities/FAQ.entity';
 import { GroupMessages } from 'src/database/entities/group.entitiy';
 import { Groups } from 'src/database/entities/groups.entity';
 import { Instructors } from 'src/database/entities/instructor.entity';
@@ -13,6 +14,7 @@ import { ProjectParticipants } from 'src/database/entities/Project-Participants.
 import { Projects } from 'src/database/entities/project.entity';
 import { Ratings } from 'src/database/entities/rate.entity';
 import { Students } from 'src/database/entities/student.entity';
+import { UserGroups } from 'src/database/entities/user-groups.entity';
 import { Users } from 'src/database/entities/user.entity';
 
 export const modelsProviders = [
@@ -79,5 +81,13 @@ export const modelsProviders = [
   {
     provide: 'GROUPMESSAGES',
     useValue: GroupMessages,
+  },
+  {
+    provide: 'USERGROUPS',
+    useValue: UserGroups,
+  },
+  {
+    provide: 'FEEDBACK',
+    useValue: Feedback,
   },
 ];

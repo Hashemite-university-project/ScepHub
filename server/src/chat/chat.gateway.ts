@@ -9,6 +9,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
 import { JwtService } from '@nestjs/jwt';
+import { UserGroups } from '../database/entities/user-groups.entity';
 
 @WebSocketGateway({ cors: true, port: 8000 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -81,24 +82,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     let senderId = Array.from(this.connections.entries()).find(
       ([userId, clientId]) => clientId === client.id,
     )?.[0];
-    console.log(senderId);
     if (typeof senderId === 'bigint') {
       senderId = Number(senderId);
     }
-    const group = await this.chatService.getGroupById(payload.group_id);
-    if (group) {
+    const groupMembers = await this.chatService.getGroupById(payload.group_id);
+    if (groupMembers) {
       const message = await this.chatService.createGroupMessage(
         senderId,
         payload,
       );
-      const groupMembers = group.members;
-      groupMembers.forEach((member) => {
-        console.log(member);
-        const receiverClientId = this.connections.get(
-          typeof member.dataValues.user_id === 'bigint'
-            ? Number(member.dataValues.user_id)
-            : member.dataValues.user_id,
-        );
+      console.log('group members =======>> ', groupMembers);
+      groupMembers.forEach((member: UserGroups) => {
+        const userId = member.dataValues.user_id; // Access user_id from dataValues
+        const receiverClientId = this.connections.get(userId);
+
         if (receiverClientId) {
           this.server.to(receiverClientId).emit('receiveGroupMessage', message);
         }
@@ -143,6 +140,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         secret: process.env.SECRET_KEY,
       });
       const user_id = payload.user_id;
+
       return user_id;
     } catch (err) {
       console.error('JWT verification failed:', err.message);

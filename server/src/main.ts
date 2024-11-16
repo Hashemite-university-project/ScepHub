@@ -7,7 +7,7 @@ import * as bodyParser from 'body-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.enableCors({ origin: process.env.ALLOWED_ORIGIN, credentials: true });
+  app.enableCors({ origin: '*', credentials: true });
   app.use(cookieParser());
 
   app.use('/webhooks/stripe', bodyParser.raw({ type: 'application/json' }));

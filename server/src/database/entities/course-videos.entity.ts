@@ -31,7 +31,7 @@ export class Contents extends Model<Contents> {
   course_id: bigint;
 
   @Column({ type: DataType.BOOLEAN, defaultValue: false })
-  is_deleted;
+  is_deleted: boolean;
 
   @BelongsTo(() => Courses)
   course: Courses;
