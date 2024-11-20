@@ -5,17 +5,19 @@ import {
   DataType,
   ForeignKey,
   BelongsTo,
+  HasMany,
+  PrimaryKey,
 } from 'sequelize-typescript';
 import { Users } from './user.entity';
+import { Skills } from './skills.entity';
+import { Links } from './link.entity';
 
 @Table
 export class Students extends Model {
+  @PrimaryKey
   @ForeignKey(() => Users)
   @Column({ type: DataType.BIGINT })
   user_id: bigint;
-
-  @Column({ type: DataType.STRING, defaultValue: null })
-  skills: string;
 
   @Column(DataType.STRING)
   university_name: string;
@@ -32,12 +34,15 @@ export class Students extends Model {
   @Column({ type: DataType.STRING, defaultValue: null })
   about_me: bigint;
 
-  @Column({ type: DataType.BIGINT, defaultValue: null })
-  links: bigint;
-
   @Column({ type: DataType.TEXT, defaultValue: null })
   user_cv: string;
 
   @BelongsTo(() => Users)
   user: Users;
+
+  @HasMany(() => Skills)
+  skills: Skills[];
+
+  @HasMany(() => Links)
+  user_link: Links[];
 }

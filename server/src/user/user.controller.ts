@@ -9,6 +9,7 @@ import {
   UseGuards,
   Put,
   Get,
+  Param,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create/create-user.dto';
@@ -170,17 +171,35 @@ export class UserController {
     @Body() instructorForm: InstructorFormDto,
     @Req() Request: Request,
   ) {
-    const instructorCV = Request['fileUrl'];
+    const instructorImage = Request['fileUrl'];
     const instructorID = Request['user'].user_id;
     await this.userService.setInstructorInformation(
       instructorID,
       instructorForm,
-      instructorCV,
+      instructorImage,
     );
     return {
       statusCode: HttpStatus.OK,
       message: 'Instructor information updated successfully',
     };
+  }
+
+  @ApiResponse({ status: 200 })
+  @Get('feedback')
+  async feedback() {
+    return await this.userService.feedback();
+  }
+
+  @ApiResponse({ status: 200 })
+  @Get('profileCV/:id')
+  async userProfile(@Param('id') userID: string) {
+    return await this.userService.userProfile(userID);
+  }
+
+  @ApiResponse({ status: 200 })
+  @Get('popularStudents')
+  async popularStudents() {
+    return await this.userService.popularStudents();
   }
 
   //   @Post('refresh-token')

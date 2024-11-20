@@ -5,9 +5,11 @@ import {
   DataType,
   HasMany,
   ForeignKey,
+  BelongsToMany,
 } from 'sequelize-typescript';
 import { Users } from './user.entity';
 import { Projects } from './project.entity';
+import { UserGroups } from './user-groups.entity';
 
 @Table
 export class Groups extends Model {
@@ -21,6 +23,9 @@ export class Groups extends Model {
   @Column(DataType.BIGINT)
   group_project: bigint;
 
-  @HasMany(() => Users, 'group_id')
+  //   @HasMany(() => Users, 'group_id')
+  //   members: Users[];
+
+  @BelongsToMany(() => Users, () => UserGroups)
   members: Users[];
 }

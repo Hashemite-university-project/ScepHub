@@ -19,6 +19,13 @@ import { StudentFormDto } from './dto/update/update-student.dto';
 import { InstructorFormDto } from './dto/update/update-Instructor.dto';
 import { CreateAdminDto } from './dto/create/create-admin.dto';
 import { Admins } from 'src/database/entities/admin.entity';
+import { Feedback } from 'src/database/entities/FAQ.entity';
+import { Op } from 'sequelize';
+import { Projects } from 'src/database/entities/project.entity';
+import { Categories } from 'src/database/entities/category.entity';
+import { Enrollments } from 'src/database/entities/enrollment.entity';
+import { Skills } from 'src/database/entities/skills.entity';
+import { Links } from 'src/database/entities/link.entity';
 
 @Injectable()
 export class UserService {
@@ -30,6 +37,12 @@ export class UserService {
     private readonly InstructorModel: typeof Instructors,
     @Inject('ADMIN_REPOSITORY')
     private readonly adminModel: typeof Admins,
+    @Inject('PROJECTS_REPOSITORY')
+    private readonly ProjectModel: typeof Projects,
+    @Inject('FEEDBACK')
+    private readonly feedbackModel: typeof Feedback,
+    @Inject('ENROLLMENTS')
+    private readonly enrollmentsModel: typeof Enrollments,
     private readonly jwtService: Jwtservice,
     private readonly bcryptService: BcryptService,
     @Inject('SEQUELIZE') private readonly sequelize: Sequelize,
@@ -174,6 +187,7 @@ export class UserService {
   async userInfo(userID: string) {
     try {
       const userInfo = await this.UserModel.findByPk(userID);
+      console.log(userInfo);
       if (!userInfo) throw new NotFoundException();
       return userInfo;
     } catch (error) {
@@ -247,7 +261,7 @@ export class UserService {
   async setInstructorInformation(
     instructorID: string,
     instructorForm: InstructorFormDto,
-    instructorCV: string,
+    instructorImage: string,
   ) {
     const transaction = await this.sequelize.transaction();
     try {
@@ -265,9 +279,14 @@ export class UserService {
           skills: instructorForm.skills,
           major: instructorForm.major,
           about_me: instructorForm.about_me,
-          user_cv: instructorCV,
         },
         { transaction },
+      );
+      await this.UserModel.update(
+        {
+          user_img: instructorImage,
+        },
+        { where: { user_id: instructorID } },
       );
       await transaction.commit();
       return instructorData.dataValues;
@@ -275,6 +294,148 @@ export class UserService {
       console.log(error);
       await transaction.rollback();
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async feedback() {
+    try {
+      const usersFeedback = await this.feedbackModel.findAll({
+        include: [
+          {
+            model: Users,
+            include: [
+              {
+                model: Students,
+                required: false,
+              },
+              {
+                model: Instructors,
+                required: false,
+              },
+            ],
+          },
+        ],
+      });
+      const results = usersFeedback.map((feedback) => {
+        const user = feedback.user;
+        if (user.role.toString() === '1') {
+          return { ...feedback.toJSON(), relatedUser: user.student };
+        } else if (user.role.toString() === '2') {
+          return { ...feedback.toJSON(), relatedUser: user.instructor };
+        }
+        return feedback;
+      });
+      return results;
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async userProfile(userID: string) {
+    try {
+      const userProfile = await this.UserModel.findByPk(userID);
+      if (!userProfile) {
+        throw new Error('User not found');
+      }
+      if (userProfile.role.toString() === '1') {
+        const studentProfile = await this.StudentModel.findOne({
+          where: {
+            user_id: userID,
+          },
+          include: [
+            {
+              model: Users,
+              as: 'user',
+            },
+            {
+              model: Skills,
+            },
+            {
+              model: Links,
+            },
+          ],
+        });
+        let arrays = String(studentProfile.joined_projects);
+        const joinedProjects = JSON.parse(arrays);
+        const studentProjects = await this.ProjectModel.findAll({
+          where: {
+            project_id: {
+              [Op.in]: joinedProjects,
+            },
+          },
+          include: [
+            {
+              model: Instructors,
+              as: 'instructor',
+            },
+            {
+              model: Categories,
+              as: 'category',
+            },
+          ],
+        });
+        const studentCourses = await this.enrollmentsModel.findAll({
+          where: {
+            course_id: studentProfile.enrolled_courses,
+            student_id: userID,
+          },
+        });
+        return {
+          user: studentProfile,
+          projects: studentProjects,
+          courses: studentCourses,
+        };
+      } else if (userProfile.role.toString() === '2') {
+        const instructorProfile = await this.InstructorModel.findOne({
+          where: {
+            instructor_id: userID,
+          },
+          include: [
+            {
+              model: Users,
+            },
+          ],
+        });
+        const instructorProjects = await this.ProjectModel.findAll({
+          where: {
+            project_instructor: userID,
+          },
+        });
+
+        return { user: instructorProfile, projects: instructorProjects };
+      }
+      return null;
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async popularStudents() {
+    try {
+      const topStudents = await Students.findAll({
+        where: Sequelize.where(
+          Sequelize.fn('JSON_LENGTH', Sequelize.col('joined_projects')),
+          { [Op.gt]: 2 },
+        ),
+        attributes: [
+          'user_id',
+          'joined_projects',
+          'university_name',
+          'major',
+          'about_me',
+        ],
+        include: [
+          {
+            model: Users,
+            attributes: ['user_name', 'user_email', 'user_img'],
+          },
+        ],
+        limit: 3,
+      });
+      return topStudents;
+    } catch (error) {
+      throw new Error(`Failed to fetch top students: ${error.message}`);
     }
   }
 

@@ -3,6 +3,7 @@ import { Op } from 'sequelize';
 import { GroupMessages } from 'src/database/entities/group.entitiy';
 import { Groups } from 'src/database/entities/groups.entity';
 import { Messages } from 'src/database/entities/message.entity';
+import { UserGroups } from 'src/database/entities/user-groups.entity';
 import { Users } from 'src/database/entities/user.entity';
 
 @Injectable()
@@ -11,8 +12,11 @@ export class ChatService {
     @Inject('MESSAGES') private readonly messagesModel: typeof Messages,
     @Inject('GROUPMESSAGES')
     private readonly groupMessagesModel: typeof GroupMessages,
+    @Inject('USER_REPOSITORY') private readonly UserModel: typeof Users,
     @Inject('GROUPS')
     private readonly groupsModel: typeof Groups,
+    @Inject('USERGROUPS')
+    private readonly userGroups: typeof UserGroups,
   ) {}
 
   async createMessage(
@@ -69,14 +73,22 @@ export class ChatService {
         { model: Groups, as: 'group' },
       ],
     });
-    // console.log(messages);
+    console.log(messages);
     return messages;
   }
 
-  async getGroupById(group_id: number) {
-    const members = await this.groupsModel.findByPk(group_id, {
-      include: [{ model: Users, as: 'members' }],
+  async getGroupById(groupID: number) {
+    const groupMembers = await this.userGroups.findAll({
+      where: { group_id: groupID },
     });
-    return members;
+    return groupMembers;
+  }
+
+  async getUserGroups(user_id: number) {
+    const user = await this.UserModel.findByPk(user_id, {
+      include: [{ model: Groups, as: 'groups' }],
+    });
+
+    return user?.groups || [];
   }
 }

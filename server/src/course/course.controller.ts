@@ -242,4 +242,22 @@ export class CourseController {
       rating,
     );
   }
+
+  @ApiResponse({
+    status: 200,
+    description: 'for top courses in home page',
+  })
+  @Get('topRatingCourses')
+  async topCoursesRate(@Req() Request: Request) {
+    return this.courseService.topCoursesRate();
+  }
+
+  @ApiResponse({
+    status: 200,
+    description: 'for top courses in home page',
+  })
+  @Get('coursePage/:id')
+  async coursePage(@Req() Request: Request, @Param('id') id: string) {
+    return await this.courseService.coursePage(id);
+  }
 }

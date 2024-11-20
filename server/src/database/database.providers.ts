@@ -22,6 +22,9 @@ import * as dotenv from 'dotenv';
 import { Enrollments } from './entities/enrollment.entity';
 import { Groups } from './entities/groups.entity';
 import { GroupMessages } from './entities/group.entitiy';
+import { UserGroups } from './entities/user-groups.entity';
+import { Feedback } from './entities/FAQ.entity';
+import { Skills } from './entities/skills.entity';
 
 dotenv.config();
 
@@ -97,6 +100,9 @@ export const databaseProviders = [
           Enrollments,
           Groups,
           GroupMessages,
+          UserGroups,
+          Feedback,
+          Skills,
         ]);
         await sequelize.sync({ alter: true });
       } catch (error) {

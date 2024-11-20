@@ -7,6 +7,7 @@ import {
   HasOne,
   ForeignKey,
   BelongsTo,
+  BelongsToMany,
 } from 'sequelize-typescript';
 import { Admins } from './admin.entity';
 import { Students } from './student.entity';
@@ -15,6 +16,8 @@ import { Messages } from './message.entity';
 import { Ratings } from './rate.entity';
 import { Payments } from './payment.entity';
 import { Groups } from './groups.entity';
+import { DataTypes } from 'sequelize';
+import { UserGroups } from './user-groups.entity';
 
 @Table({
   tableName: 'users',
@@ -47,8 +50,14 @@ export class Users extends Model {
   is_deleted: boolean;
 
   @ForeignKey(() => Groups)
-  @Column({ type: DataType.ARRAY(DataType.BIGINT) })
-  group_id: bigint[];
+  @Column({ type: DataType.BIGINT })
+  group_id: bigint;
+
+  //   @Column({ type: DataType.JSON, defaultValue: [] })
+  //   chat_groups: number[];
+
+  @BelongsToMany(() => Groups, () => UserGroups)
+  groups: Groups[];
 
   @BelongsTo(() => Groups, 'group_id')
   group: Groups;
