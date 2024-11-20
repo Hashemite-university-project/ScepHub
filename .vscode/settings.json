@@ -7,12 +7,12 @@
     "files.autoSave": "onFocusChange", // optional but recommended
     "vs-code-prettier-eslint.prettierLast": false,
     "workbench.colorCustomizations": {
-        "sash.hoverBorder": "#1f6fd0",
-        "statusBar.background": "#1857a4",
+        "sash.hoverBorder": "#fa1b49",
+        "statusBar.background": "#dd0531",
         "statusBar.foreground": "#e7e7e7",
-        "statusBarItem.hoverBackground": "#1f6fd0",
-        "statusBarItem.remoteBackground": "#1857a4",
+        "statusBarItem.hoverBackground": "#fa1b49",
+        "statusBarItem.remoteBackground": "#dd0531",
         "statusBarItem.remoteForeground": "#e7e7e7"
     },
-    "peacock.color": "#1857a4" // set as "true" to run 'prettier' last not first
+    "peacock.color": "#dd0531" // set as "true" to run 'prettier' last not first
 }
