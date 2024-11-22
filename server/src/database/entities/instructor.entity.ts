@@ -37,7 +37,7 @@ export class Instructors extends Model<Instructors> {
 
   @Column({
     type: DataType.STRING,
-    allowNull: false,
+    allowNull: true,
     comment: 'Major field of study or expertise',
   })
   major: string;
