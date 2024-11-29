@@ -10,6 +10,7 @@ import { ReportModule } from './report/report.module';
 import { DatabaseModule } from './database/database.module';
 import { BcryptService } from './auth/bcrypt/bcrypt.service';
 import { CategoryModule } from './category/category.module';
+import { TaskModule } from './task/task.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { CategoryModule } from './category/category.module';
     ReportModule,
     DatabaseModule,
     CategoryModule,
+    TaskModule,
   ],
   controllers: [],
   providers: [BcryptService],

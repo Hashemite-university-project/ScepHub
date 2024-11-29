@@ -11,8 +11,10 @@ import { Instructors } from 'src/database/entities/instructor.entity';
 import { Messages } from 'src/database/entities/message.entity';
 import { Payments } from 'src/database/entities/payment.entity';
 import { ProjectParticipants } from 'src/database/entities/Project-Participants.entity';
+import { Tasks } from 'src/database/entities/project-task.entity';
 import { Projects } from 'src/database/entities/project.entity';
 import { Ratings } from 'src/database/entities/rate.entity';
+import { Reports } from 'src/database/entities/report.entity';
 import { Students } from 'src/database/entities/student.entity';
 import { UserGroups } from 'src/database/entities/user-groups.entity';
 import { Users } from 'src/database/entities/user.entity';
@@ -89,5 +91,13 @@ export const modelsProviders = [
   {
     provide: 'FEEDBACK',
     useValue: Feedback,
+  },
+  {
+    provide: 'TASKS',
+    useValue: Tasks,
+  },
+  {
+    provide: 'REPORTS',
+    useValue: Reports,
   },
 ];

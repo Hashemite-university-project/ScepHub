@@ -114,7 +114,7 @@ export class ProjectController {
 
   @ApiResponse({
     status: 200,
-    description: 'get the students request from the instructor',
+    description: 'get the students request for the instructor',
   })
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(Role.Instructor)
@@ -133,5 +133,45 @@ export class ProjectController {
   @Get('topProjects')
   async topProjects(@Req() Request: Request) {
     return await this.projectService.topProjects();
+  }
+
+  @ApiResponse({ status: 200 })
+  @Get('allProjects/:project_name')
+  async allProjects(
+    @Req() Request: Request,
+    @Param('project_name') project_name: string,
+  ) {
+    return await this.projectService.allProjects(project_name);
+  }
+
+  @ApiResponse({ status: 201 })
+  @Put('deleteProject/:id')
+  async deleteProject(@Req() Request: Request, @Param('id') id: string) {
+    return await this.projectService.deleteProject(id);
+  }
+
+  @ApiResponse({ status: 201 })
+  @Put('acceptStudent/:project_id/:student_id')
+  async acceptStudent(
+    @Req() Request: Request,
+    @Param('project_id') project_id: string,
+    @Param('student_id') student_id: string,
+  ) {
+    return await this.projectService.acceptStudent(project_id, student_id);
+  }
+
+  @ApiResponse({ status: 201 })
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.Student)
+  @Post('projectRequest/:project_id')
+  async makeRequestToProject(
+    @Req() Request: Request,
+    @Param('project_id') project_id: string,
+  ) {
+    const studentID = Request['user'].user_id;
+    return await this.projectService.makeRequestToProject(
+      project_id,
+      studentID,
+    );
   }
 }
