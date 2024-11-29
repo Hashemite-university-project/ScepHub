@@ -1,11 +1,30 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { CreateReportDto } from './dto/create-report.dto';
-import { UpdateReportDto } from './dto/update-report.dto';
+import { Reports } from 'src/database/entities/report.entity';
 
 @Injectable()
 export class ReportService {
-  create(createReportDto: CreateReportDto) {
-    return 'This action adds a new report';
+  constructor(
+    @Inject('REPORTS')
+    private readonly reportModel: typeof Reports,
+  ) {}
+
+  async createReport(
+    createReportDto: CreateReportDto,
+    report_img: string,
+    userID: string,
+  ) {
+    try {
+      await this.reportModel.create({
+        report_message: createReportDto.report_message,
+        report_user: userID,
+        report_at: createReportDto.report_at,
+        report_img: report_img,
+      });
+      return { message: 'Report saved successfully!' };
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   findAll() {
@@ -14,13 +33,5 @@ export class ReportService {
 
   findOne(id: number) {
     return `This action returns a #${id} report`;
-  }
-
-  update(id: number, updateReportDto: UpdateReportDto) {
-    return `This action updates a #${id} report`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} report`;
   }
 }

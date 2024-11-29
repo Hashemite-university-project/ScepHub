@@ -4,12 +4,14 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 import { Instructors } from 'src/database/entities/instructor.entity';
 import { Students } from 'src/database/entities/student.entity';
 import { Users } from 'src/database/entities/user.entity';
-import { col, fn, Sequelize } from 'sequelize';
+import { col, fn, Sequelize, where } from 'sequelize';
 import { Projects } from 'src/database/entities/project.entity';
 import { ProjectParticipants } from 'src/database/entities/Project-Participants.entity';
 import { Op } from 'sequelize';
 import { Categories } from 'src/database/entities/category.entity';
 import { Groups } from 'src/database/entities/groups.entity';
+import { stringify } from 'querystring';
+import { Tasks } from 'src/database/entities/project-task.entity';
 
 @Injectable()
 export class ProjectService {
@@ -23,6 +25,8 @@ export class ProjectService {
     private readonly InstructorModel: typeof Instructors,
     @Inject('PROJECTPARTICIPANTS')
     private readonly participantsModel: typeof ProjectParticipants,
+    @Inject('TASKS')
+    private readonly tasksModel: typeof Tasks,
     @Inject('GROUPS')
     private readonly groupsModel: typeof Groups,
     @Inject('SEQUELIZE') private readonly sequelize: Sequelize,
@@ -76,7 +80,10 @@ export class ProjectService {
           },
         },
       );
-      return 'project Created Successfully!';
+      await this.participantsModel.create({
+        project_id: newProject.project_id,
+      });
+      return { message: 'project Created Successfully!' };
     } catch (error) {
       console.log(error);
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -110,7 +117,7 @@ export class ProjectService {
           where: { project_id: projectID },
         },
       );
-      return 'Project updated successfully!';
+      return { message: 'Project updated successfully!' };
     } catch (error) {
       console.log(error);
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -257,9 +264,38 @@ export class ProjectService {
 
   async getStudentsRequests(projectID: string) {
     try {
-      const studentsRequests = await this.participantsModel.findByPk(projectID);
+      const studentsRequests = await this.participantsModel.findOne({
+        where: { project_id: projectID },
+        attributes: ['students_requests'],
+      });
+      if (!studentsRequests) {
+        throw new Error('No requests found for the given project ID');
+      }
+      let userIds: number[];
+      if (typeof studentsRequests.students_requests === 'string') {
+        userIds = JSON.parse(studentsRequests.students_requests);
+      } else if (Array.isArray(studentsRequests.students_requests)) {
+        userIds = studentsRequests.students_requests.map(Number);
+      } else {
+        throw new Error(
+          'Unexpected format for students_requests. Expected a string or array.',
+        );
+      }
+      const studentsProfiles = await this.StudentModel.findAll({
+        where: {
+          user_id: {
+            [Op.in]: userIds,
+          },
+        },
+        include: [
+          {
+            model: Users,
+          },
+        ],
+      });
+      return studentsProfiles;
     } catch (error) {
-      console.log(error);
+      console.error('Error fetching student requests:', error);
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -280,6 +316,129 @@ export class ProjectService {
       return topProjects;
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async allProjects(name?: string) {
+    try {
+      const whereClause: any = {
+        is_deleted: false,
+      };
+      if (name) {
+        whereClause.name = { [Op.iLike]: `%${name}%` };
+      }
+      const allProjects = await this.ProjectModel.findAll({
+        where: whereClause,
+        include: [
+          {
+            model: Instructors,
+            include: [
+              {
+                model: Users,
+              },
+            ],
+          },
+          {
+            model: Categories,
+          },
+        ],
+      });
+      return allProjects;
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async deleteProject(project_id: string) {
+    try {
+      const [affectedRows] = await this.ProjectModel.update(
+        { is_deleted: true },
+        { where: { project_id: project_id } },
+      );
+      if (affectedRows === 0) {
+        throw new HttpException('Project not found', HttpStatus.NOT_FOUND);
+      }
+      return { message: 'Project deleted successfully' };
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async acceptStudent(project_id: string, student_id: string) {
+    try {
+      console.log(project_id, student_id);
+      const studentRequest = await this.participantsModel.findOne({
+        where: Sequelize.where(
+          Sequelize.literal(
+            `JSON_CONTAINS(students_requests, ${student_id}) AND project_id = ${project_id}`,
+          ),
+          true,
+        ),
+      });
+      if (!studentRequest) {
+        throw new HttpException(
+          'Student request not found',
+          HttpStatus.NOT_FOUND,
+        );
+      }
+      const student = await this.StudentModel.findByPk(student_id);
+      if (!student) {
+        throw new HttpException('Student not found', HttpStatus.NOT_FOUND);
+      }
+      const updatedProjects = student.joined_projects
+        ? [...student.joined_projects, project_id]
+        : [project_id];
+      await this.StudentModel.update(
+        { joined_projects: updatedProjects },
+        { where: { user_id: student_id } },
+      );
+      const updatedStudents = studentRequest.dataValues.joined_students
+        ? [...studentRequest.dataValues.joined_students, student_id]
+        : [student_id];
+      studentRequest.update({ joined_Students: updatedStudents });
+      return { message: 'Student accepted!' };
+    } catch (error) {
+      console.error(error);
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async makeRequestToProject(project_id: string, studentID: string) {
+    try {
+      const student = await this.StudentModel.findByPk(studentID);
+      if (!student) {
+        throw new HttpException('Student not found', HttpStatus.NOT_FOUND);
+      }
+      const projectParticipant = await this.participantsModel.findOne({
+        where: { project_id },
+      });
+      if (!projectParticipant) {
+        throw new HttpException('Project not found', HttpStatus.NOT_FOUND);
+      }
+      let joinedStudents = projectParticipant.joined_Students || [];
+      if (
+        projectParticipant.dataValues.students_requests.includes(
+          student.user_id,
+        )
+      ) {
+        return {
+          message: 'You have already made a request to join this project',
+        };
+      }
+      joinedStudents = [...joinedStudents, student.user_id];
+      await projectParticipant.update(
+        { students_requests: joinedStudents },
+        { where: { project_id: project_id } },
+      );
+      return {
+        message: 'Request to join the project has been sent successfully!',
+      };
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(
+        error.message || 'Internal Server Error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 }

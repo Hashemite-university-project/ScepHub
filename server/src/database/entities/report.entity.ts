@@ -26,9 +26,6 @@ export class Reports extends Model {
   @Column(DataType.TEXT)
   report_img: string;
 
-  @Column(DataType.BOOLEAN)
-  is_deleted: boolean;
-
   @BelongsTo(() => Users, 'report_user')
   user: Users;
 }

@@ -25,14 +25,23 @@ export class Tasks extends Model {
   @Column(DataType.STRING)
   title: string;
 
-  @Column(DataType.STRING)
+  @Column(DataType.TEXT)
   description: string;
 
-  @Column(DataType.ENUM('pending', 'in_progress', 'completed'))
-  status: 'pending' | 'in_progress' | 'completed';
+  @Column({
+    type: DataType.ENUM('in_progress', 'completed'),
+    defaultValue: 'in_progress',
+  })
+  status: 'in_progress' | 'completed';
 
   @Column(DataType.DATE)
   due_date: Date;
+
+  @Column(DataType.TEXT)
+  task_img: string;
+
+  @Column(DataType.TEXT)
+  task_delivery: string;
 
   @BelongsTo(() => Projects)
   project: Projects;
