@@ -46,4 +46,21 @@ export class CategoryService {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+
+  async updateCategory(category_id: string, newCategoryName: string) {
+    try {
+      console.log(category_id, newCategoryName);
+      await this.CategoryModel.update(
+        { category_name: newCategoryName },
+        {
+          where: {
+            category_id: category_id,
+          },
+        },
+      );
+      return { message: 'Category updated' };
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
 }

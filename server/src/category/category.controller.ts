@@ -5,6 +5,9 @@ import {
   Body,
   UseGuards,
   HttpStatus,
+  Put,
+  Req,
+  Param,
 } from '@nestjs/common';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -40,5 +43,18 @@ export class CategoryController {
   async findAllCategories() {
     const allCategories = await this.categoryService.findAllCategories();
     return allCategories;
+  }
+
+  @ApiResponse({ status: 200 })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @UseGuards(AuthGuard)
+  @Roles(Role.Admin)
+  @Put('updateCategory/:category_id')
+  async updateCategory(
+    @Req() Request: Request,
+    @Param('category_id') category_id: string,
+    @Body('category_name') category_name: string,
+  ) {
+    return this.categoryService.updateCategory(category_id, category_name);
   }
 }

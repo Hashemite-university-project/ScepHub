@@ -20,9 +20,6 @@ export class Reports extends Model {
   @Column({ type: DataType.BIGINT })
   report_user: bigint;
 
-  @Column(DataType.DATE)
-  report_at: Date;
-
   @Column(DataType.TEXT)
   report_img: string;
 

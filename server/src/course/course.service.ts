@@ -66,13 +66,20 @@ export class CourseService {
   async getCourseDetails(courseID: string, studentID: string, role: any) {
     try {
       const course = await this.CourseModel.findByPk(courseID);
-      if (course.dataValues.is_deleted === true) {
+      if (course.is_deleted == true) {
         return 'This course has been deleted and is no longer available.';
       }
       const studentSubscription =
         await this.paymentService.getSubscriptionStatus(studentID, role);
       let course_content: any;
-      if (role !== '1' || studentSubscription.status === 'active') {
+      if (studentSubscription.status == 'active') {
+        course_content = await this.contentModel.findAll({
+          where: {
+            course_id: courseID,
+            is_deleted: false,
+          },
+        });
+      } else if (role != '1') {
         course_content = await this.contentModel.findAll({
           where: {
             course_id: courseID,

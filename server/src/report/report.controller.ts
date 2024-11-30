@@ -26,7 +26,7 @@ export class ReportController {
   @ApiResponse({ status: 500, description: 'Internal server error' })
   @UseInterceptors(FileInterceptor('file'), UploadInterceptor)
   @UseGuards(AuthGuard, RolesGuard)
-  @Roles(Role.Instructor)
+  @Roles(Role.Instructor, Role.Student)
   @Post('create')
   async createReport(
     @Body() createReportDto: CreateReportDto,
@@ -41,8 +41,12 @@ export class ReportController {
     );
   }
 
-  @Get()
-  findAll() {
-    return this.reportService.findAll();
+  @ApiResponse({ status: 201, description: 'Task created successfully' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  @Get('view')
+  getAllReports() {
+    return this.reportService.getAllReports();
   }
 }
