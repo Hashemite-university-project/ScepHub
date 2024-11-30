@@ -1,6 +1,7 @@
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { CreateReportDto } from './dto/create-report.dto';
 import { Reports } from 'src/database/entities/report.entity';
+import { Users } from 'src/database/entities/user.entity';
 
 @Injectable()
 export class ReportService {
@@ -18,7 +19,6 @@ export class ReportService {
       await this.reportModel.create({
         report_message: createReportDto.report_message,
         report_user: userID,
-        report_at: createReportDto.report_at,
         report_img: report_img,
       });
       return { message: 'Report saved successfully!' };
@@ -27,11 +27,18 @@ export class ReportService {
     }
   }
 
-  findAll() {
-    return `This action returns all report`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} report`;
+  async getAllReports() {
+    try {
+      const allReports = await this.reportModel.findAll({
+        include: [
+          {
+            model: Users,
+          },
+        ],
+      });
+      return allReports;
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 }

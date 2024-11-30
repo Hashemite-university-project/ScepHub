@@ -26,6 +26,7 @@ import { Categories } from 'src/database/entities/category.entity';
 import { Enrollments } from 'src/database/entities/enrollment.entity';
 import { Skills } from 'src/database/entities/skills.entity';
 import { Links } from 'src/database/entities/link.entity';
+import { Courses } from 'src/database/entities/course.entity';
 
 @Injectable()
 export class UserService {
@@ -43,6 +44,7 @@ export class UserService {
     private readonly feedbackModel: typeof Feedback,
     @Inject('ENROLLMENTS')
     private readonly enrollmentsModel: typeof Enrollments,
+    @Inject('COURSE_REPOSITORY') private readonly CourseModel: typeof Courses,
     private readonly jwtService: Jwtservice,
     private readonly bcryptService: BcryptService,
     @Inject('SEQUELIZE') private readonly sequelize: Sequelize,
@@ -333,6 +335,7 @@ export class UserService {
 
   async userProfile(userID: string) {
     try {
+      console.log(userID);
       const userProfile = await this.UserModel.findByPk(userID);
       if (!userProfile) {
         throw new Error('User not found');
@@ -357,33 +360,40 @@ export class UserService {
         });
         let arrays = String(studentProfile.joined_projects);
         const joinedProjects = JSON.parse(arrays);
-        const studentProjects = await this.ProjectModel.findAll({
-          where: {
-            project_id: {
-              [Op.in]: joinedProjects,
+        console.log('sssssssssssssssss', userID);
+        let studentProjects: any;
+        if (joinedProjects) {
+          studentProjects = await this.ProjectModel.findAll({
+            where: {
+              project_id: {
+                [Op.in]: joinedProjects,
+              },
             },
-          },
-          include: [
-            {
-              model: Instructors,
-              as: 'instructor',
-            },
-            {
-              model: Categories,
-              as: 'category',
-            },
-          ],
-        });
+            include: [
+              {
+                model: Instructors,
+                as: 'instructor',
+              },
+              {
+                model: Categories,
+                as: 'category',
+              },
+            ],
+          });
+        } else {
+          studentProjects = null;
+        }
         const studentCourses = await this.enrollmentsModel.findAll({
           where: {
-            course_id: studentProfile.enrolled_courses,
-            student_id: userID,
+            student_id: studentProfile.user_id,
+            payed_for: true,
           },
         });
         return {
           user: studentProfile,
           projects: studentProjects,
           courses: studentCourses,
+          role: userProfile.role,
         };
       } else if (userProfile.role.toString() === '2') {
         const instructorProfile = await this.InstructorModel.findOne({
@@ -398,11 +408,20 @@ export class UserService {
         });
         const instructorProjects = await this.ProjectModel.findAll({
           where: {
-            project_instructor: userID,
+            project_instructor: instructorProfile.id,
           },
         });
-
-        return { user: instructorProfile, projects: instructorProjects };
+        const instructorCourses = await this.CourseModel.findAll({
+          where: {
+            course_instructor: instructorProfile.id,
+          },
+        });
+        return {
+          user: instructorProfile,
+          projects: instructorProjects,
+          courses: instructorCourses,
+          role: userProfile.role,
+        };
       }
       return null;
     } catch (error) {
