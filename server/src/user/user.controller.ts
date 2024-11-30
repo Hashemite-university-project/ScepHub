@@ -184,6 +184,15 @@ export class UserController {
     };
   }
 
+  @ApiResponse({ status: 201 })
+  @ApiResponse({ status: 400, description: 'invalid inputs' })
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  @Get('users/:role')
+  async getAllUsersById(@Param('role') role: string, @Req() Request: Request) {
+    return await this.userService.getAllUsersById(role);
+  }
+
   @ApiResponse({ status: 200 })
   @Get('feedback')
   async feedback() {

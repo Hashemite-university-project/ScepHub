@@ -458,6 +458,41 @@ export class UserService {
     }
   }
 
+  async getAllUsersById(role: string) {
+    try {
+      console.log(role);
+      let allUsers: any;
+      if (role === '1') {
+        allUsers = await this.StudentModel.findAll({
+          include: [
+            {
+              model: Users,
+            },
+          ],
+        });
+      } else if (role === '2') {
+        allUsers = await this.InstructorModel.findAll({
+          include: [
+            {
+              model: Users,
+            },
+          ],
+        });
+      } else {
+        allUsers = await this.adminModel.findAll({
+          include: [
+            {
+              model: Users,
+            },
+          ],
+        });
+      }
+      return allUsers;
+    } catch (error) {
+      throw new Error(`Failed to fetch users: ${error.message}`);
+    }
+  }
+
   //   async refreshToken(refreshToken: string) {
   //     try {
   //       const refreshPayload =
