@@ -12,6 +12,7 @@ import { Categories } from 'src/database/entities/category.entity';
 import { Groups } from 'src/database/entities/groups.entity';
 import { stringify } from 'querystring';
 import { Tasks } from 'src/database/entities/project-task.entity';
+import { UserGroups } from 'src/database/entities/user-groups.entity';
 
 @Injectable()
 export class ProjectService {
@@ -29,6 +30,8 @@ export class ProjectService {
     private readonly tasksModel: typeof Tasks,
     @Inject('GROUPS')
     private readonly groupsModel: typeof Groups,
+    @Inject('USERGROUPS')
+    private readonly userGroups: typeof UserGroups,
     @Inject('SEQUELIZE') private readonly sequelize: Sequelize,
   ) {}
 
@@ -396,6 +399,15 @@ export class ProjectService {
         ? [...studentRequest.dataValues.joined_students, student_id]
         : [student_id];
       studentRequest.update({ joined_Students: updatedStudents });
+      const groupID = await this.groupsModel.findOne({
+        where: {
+          group_project: project_id,
+        },
+      });
+      await this.userGroups.create({
+        user_id: student_id,
+        group_id: groupID,
+      });
       return { message: 'Student accepted!' };
     } catch (error) {
       console.error(error);
@@ -410,16 +422,15 @@ export class ProjectService {
         throw new HttpException('Student not found', HttpStatus.NOT_FOUND);
       }
       const projectParticipant = await this.participantsModel.findOne({
-        where: { project_id },
+        where: { project_id: project_id },
       });
       if (!projectParticipant) {
-        throw new HttpException('Project not found', HttpStatus.NOT_FOUND);
+        return 'Project not found!';
       }
       let joinedStudents = projectParticipant.joined_Students || [];
       if (
-        projectParticipant.dataValues.students_requests.includes(
-          student.user_id,
-        )
+        projectParticipant.students_requests &&
+        projectParticipant.students_requests.includes(student.user_id)
       ) {
         return {
           message: 'You have already made a request to join this project',

@@ -66,7 +66,7 @@ export class CourseService {
   async getCourseDetails(courseID: string, studentID: string, role: any) {
     try {
       const course = await this.CourseModel.findByPk(courseID);
-      if (course.is_deleted === true) {
+      if (course.dataValues.is_deleted === true) {
         return 'This course has been deleted and is no longer available.';
       }
       const studentSubscription =
