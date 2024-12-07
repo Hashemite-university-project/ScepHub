@@ -8,6 +8,7 @@ import { Feedback } from 'src/database/entities/FAQ.entity';
 import { GroupMessages } from 'src/database/entities/group.entitiy';
 import { Groups } from 'src/database/entities/groups.entity';
 import { Instructors } from 'src/database/entities/instructor.entity';
+import { Links } from 'src/database/entities/link.entity';
 import { Messages } from 'src/database/entities/message.entity';
 import { Payments } from 'src/database/entities/payment.entity';
 import { ProjectParticipants } from 'src/database/entities/Project-Participants.entity';
@@ -99,5 +100,13 @@ export const modelsProviders = [
   {
     provide: 'REPORTS',
     useValue: Reports,
+  },
+  {
+    provide: 'LINKS',
+    useValue: Links,
+  },
+  {
+    provide: 'PAYMENTS',
+    useValue: Payments,
   },
 ];

@@ -1,4 +1,10 @@
-import { Table, Column, Model, ForeignKey } from 'sequelize-typescript';
+import {
+  Table,
+  Column,
+  Model,
+  ForeignKey,
+  PrimaryKey,
+} from 'sequelize-typescript';
 import { Users } from './user.entity';
 import { Groups } from './groups.entity';
 
@@ -8,10 +14,12 @@ import { Groups } from './groups.entity';
 })
 export class UserGroups extends Model {
   @ForeignKey(() => Users)
+  @PrimaryKey
   @Column
   user_id: number;
 
   @ForeignKey(() => Groups)
+  @PrimaryKey
   @Column
   group_id: number;
 }

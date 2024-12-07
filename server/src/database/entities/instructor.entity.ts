@@ -10,6 +10,8 @@ import {
 import { Users } from './user.entity';
 import { Projects } from './project.entity';
 import { Courses } from './course.entity';
+import { Links } from './link.entity';
+import { Skills } from './skills.entity';
 
 @Table({
   tableName: 'instructors',
@@ -27,13 +29,6 @@ export class Instructors extends Model<Instructors> {
     comment: 'Foreign key to Users table',
   })
   instructor_id: bigint;
-
-  @Column({
-    type: DataType.STRING,
-    allowNull: true,
-    comment: 'Skills of the instructor',
-  })
-  skills: string;
 
   @Column({
     type: DataType.STRING,
@@ -64,11 +59,17 @@ export class Instructors extends Model<Instructors> {
   user_cv: string;
 
   @BelongsTo(() => Users, { onDelete: 'CASCADE' })
-  instructor: Users;
+  user: Users;
 
   @HasMany(() => Projects, { foreignKey: 'project_instructor' })
   projects: Projects[];
 
   @HasMany(() => Courses, { foreignKey: 'course_instructor' })
   courses: Courses[];
+
+  @HasMany(() => Links)
+  user_link: Links[];
+
+  @HasMany(() => Skills)
+  skills: Skills[];
 }

@@ -206,9 +206,44 @@ export class UserController {
   }
 
   @ApiResponse({ status: 200 })
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.Admin, Role.Student, Role.Instructor)
+  @Get('profilePage')
+  async userProfilePage(@Req() Request: Request) {
+    const userID = Request['user'].user_id;
+    return await this.userService.userProfilePage(userID);
+  }
+
+  @ApiResponse({ status: 200 })
   @Get('popularStudents')
   async popularStudents() {
     return await this.userService.popularStudents();
+  }
+
+  @ApiResponse({ status: 200 })
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.Student)
+  @Get('studentStatistics')
+  async studentStatistics(@Req() Request: Request) {
+    const studentID = Request['user'].user_id;
+    return await this.userService.studentStatistics(studentID);
+  }
+
+  @ApiResponse({ status: 200 })
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  @Get('adminStatistics')
+  async adminStatistics(@Req() Request: Request) {
+    return await this.userService.adminStatistics();
+  }
+
+  @ApiResponse({ status: 200 })
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.Instructor)
+  @Get('instructorStatistics')
+  async instructorStatistics(@Req() Request: Request) {
+    const instructorID = Request['user'].user_id;
+    return await this.userService.instructorStatistics(instructorID);
   }
 
   //   @Post('refresh-token')

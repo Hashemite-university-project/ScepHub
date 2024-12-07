@@ -12,7 +12,7 @@ import { Users } from 'src/database/entities/user.entity';
 import { Jwtservice } from 'src/auth/jwt-service/jwt-service.service';
 import { BcryptService } from 'src/auth/bcrypt/bcrypt.service';
 import { Students } from 'src/database/entities/student.entity';
-import { Sequelize } from 'sequelize';
+import { Sequelize, where } from 'sequelize';
 import { SignInDto } from './dto/sign-in.dto';
 import { Instructors } from 'src/database/entities/instructor.entity';
 import { StudentFormDto } from './dto/update/update-student.dto';
@@ -27,6 +27,9 @@ import { Enrollments } from 'src/database/entities/enrollment.entity';
 import { Skills } from 'src/database/entities/skills.entity';
 import { Links } from 'src/database/entities/link.entity';
 import { Courses } from 'src/database/entities/course.entity';
+import { ProjectParticipants } from 'src/database/entities/Project-Participants.entity';
+import { Tasks } from 'src/database/entities/project-task.entity';
+import { Payments } from 'src/database/entities/payment.entity';
 
 @Injectable()
 export class UserService {
@@ -42,8 +45,16 @@ export class UserService {
     private readonly ProjectModel: typeof Projects,
     @Inject('FEEDBACK')
     private readonly feedbackModel: typeof Feedback,
+    @Inject('LINKS')
+    private readonly linkModel: typeof Links,
+    @Inject('TASKS')
+    private readonly tasksModel: typeof Tasks,
     @Inject('ENROLLMENTS')
     private readonly enrollmentsModel: typeof Enrollments,
+    @Inject('PAYMENTS')
+    private readonly paymentModel: typeof Payments,
+    @Inject('PROJECTPARTICIPANTS')
+    private readonly participantsModel: typeof ProjectParticipants,
     @Inject('COURSE_REPOSITORY') private readonly CourseModel: typeof Courses,
     private readonly jwtService: Jwtservice,
     private readonly bcryptService: BcryptService,
@@ -278,7 +289,7 @@ export class UserService {
       }
       const instructorData = await instructor.update(
         {
-          skills: instructorForm.skills,
+          //   skills: instructorForm.skills,
           major: instructorForm.major,
           about_me: instructorForm.about_me,
         },
@@ -335,7 +346,6 @@ export class UserService {
 
   async userProfile(userID: string) {
     try {
-      console.log(userID);
       const userProfile = await this.UserModel.findByPk(userID);
       if (!userProfile) {
         throw new Error('User not found');
@@ -360,7 +370,6 @@ export class UserService {
         });
         let arrays = String(studentProfile.joined_projects);
         const joinedProjects = JSON.parse(arrays);
-        console.log('sssssssssssssssss', userID);
         let studentProjects: any;
         if (joinedProjects) {
           studentProjects = await this.ProjectModel.findAll({
@@ -490,6 +499,357 @@ export class UserService {
       return allUsers;
     } catch (error) {
       throw new Error(`Failed to fetch users: ${error.message}`);
+    }
+  }
+
+  async userProfilePage(userID: string) {
+    try {
+      const userProfile = await this.UserModel.findByPk(userID);
+      if (!userProfile) {
+        throw new Error('User not found');
+      }
+      if (userProfile.role.toString() === '1') {
+        const studentProfile = await this.StudentModel.findOne({
+          where: {
+            user_id: userID,
+          },
+          include: [
+            {
+              model: Users,
+              as: 'user',
+            },
+            {
+              model: Skills,
+            },
+            {
+              model: Links,
+            },
+          ],
+        });
+        let arrays = String(studentProfile.joined_projects);
+        const joinedProjects = JSON.parse(arrays);
+        let studentProjects: any;
+        if (joinedProjects) {
+          studentProjects = await this.ProjectModel.findAll({
+            where: {
+              project_id: {
+                [Op.in]: joinedProjects,
+              },
+            },
+            include: [
+              {
+                model: Instructors,
+                as: 'instructor',
+                include: [
+                  {
+                    model: Users,
+                  },
+                ],
+              },
+              {
+                model: Categories,
+                as: 'category',
+              },
+            ],
+          });
+        } else {
+          studentProjects = null;
+        }
+        const studentCourses = await this.enrollmentsModel.findAll({
+          where: {
+            student_id: studentProfile.user_id,
+            payed_for: true,
+          },
+          include: [
+            {
+              model: Courses,
+            },
+          ],
+        });
+        return {
+          user: studentProfile,
+          projects: studentProjects,
+          courses: studentCourses,
+          role: userProfile.role,
+        };
+      } else if (userProfile.role.toString() === '2') {
+        const instructorProfile = await this.InstructorModel.findOne({
+          where: {
+            instructor_id: userID,
+          },
+          include: [
+            {
+              model: Users,
+              as: 'user',
+            },
+            {
+              model: Skills,
+            },
+            {
+              model: Links,
+            },
+          ],
+        });
+        const instructorProjects = await this.ProjectModel.findAll({
+          where: {
+            project_instructor: instructorProfile.id,
+          },
+          include: [
+            {
+              model: Instructors,
+              as: 'instructor',
+              include: [
+                {
+                  model: Users,
+                },
+              ],
+            },
+            {
+              model: Categories,
+              as: 'category',
+            },
+          ],
+        });
+        const instructorCourses = await this.CourseModel.findAll({
+          where: {
+            course_instructor: instructorProfile.id,
+          },
+          include: [
+            {
+              model: Instructors,
+              include: [
+                {
+                  model: Users,
+                },
+              ],
+            },
+            {
+              model: Categories,
+            },
+          ],
+        });
+        return {
+          user: instructorProfile,
+          projects: instructorProjects,
+          courses: instructorCourses,
+          role: userProfile.role,
+        };
+      } else {
+        const adminProfile = await this.UserModel.findByPk(userID);
+        console.log(adminProfile);
+        return {
+          user: adminProfile,
+          role: adminProfile.role,
+        };
+      }
+    } catch (error) {
+      throw new Error(`Failed to fetch users: ${error.message}`);
+    }
+  }
+
+  async studentStatistics(studentID: string) {
+    try {
+      const studentAccount = await this.StudentModel.findOne({
+        where: { user_id: studentID },
+        include: [
+          {
+            model: Users,
+          },
+        ],
+      });
+      const totalCourses = await this.enrollmentsModel.findAll({
+        where: { student_id: studentAccount.user_id },
+      });
+      const activeCourses = await this.enrollmentsModel.findAll({
+        where: {
+          student_id: studentAccount.user_id,
+          payed_for: true,
+        },
+      });
+      const allProjects = await this.participantsModel.findAll({
+        where: Sequelize.literal(
+          `JSON_CONTAINS(joined_Students, '"${studentID}"')`,
+        ),
+      });
+      const projectIds = allProjects.map((project) => project.project_id);
+      const completedProjects = await this.ProjectModel.findAll({
+        where: {
+          project_id: {
+            [Op.in]: projectIds,
+          },
+          end_date: {
+            [Op.lt]: new Date(),
+          },
+        },
+      });
+      const upComingDeadlines = await this.ProjectModel.findAll({
+        where: {
+          project_id: {
+            [Op.in]: projectIds,
+          },
+          end_date: {
+            [Op.gt]: new Date(),
+          },
+        },
+      });
+      let profileCompleted = 0;
+      if (studentAccount.about_me) {
+        profileCompleted = profileCompleted + 20;
+      }
+      if (studentAccount.university_name) {
+        profileCompleted = profileCompleted + 20;
+      }
+      if (studentAccount.major) {
+        profileCompleted = profileCompleted + 20;
+      }
+      const studentUserTable = await this.UserModel.findByPk(studentID);
+      if (studentUserTable.user_img) {
+        profileCompleted = profileCompleted + 20;
+      }
+      const links = await this.linkModel.findAll({
+        where: { user_link: studentID },
+      });
+      if (links.length > 0) {
+        profileCompleted = profileCompleted + 20;
+      }
+      let projectsProgress = [];
+      for (const project of upComingDeadlines) {
+        const projectId = project.project_id;
+        const tasks = await this.tasksModel.findAll({
+          where: {
+            project_id: projectId,
+          },
+        });
+        // Calculate progress
+        const totalTasks = tasks.length;
+        const completedTasks = tasks.filter(
+          (task) => task.status === 'completed',
+        ).length;
+        let progressPercentage =
+          totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+        projectsProgress.push({
+          name: project.project_name,
+          data: [Math.round(progressPercentage)],
+        });
+      }
+      return {
+        totalCourses: totalCourses.length,
+        activeCourses: activeCourses.length,
+        completedProjects: completedProjects.length,
+        upComingDeadlines: upComingDeadlines.length,
+        profileCompleted,
+        projectsProgress,
+      };
+    } catch (error) {
+      throw new Error(`Failed to fetch user statistics: ${error.message}`);
+    }
+  }
+
+  async adminStatistics() {
+    try {
+      const totalCourses = await this.CourseModel.findAll();
+      const totalProjects = await this.ProjectModel.findAll();
+      let monthPayment = await this.paymentModel.findAll({
+        where: {
+          activate: true,
+        },
+      });
+      const payment = monthPayment.length * 5;
+      let inProgressProjects = await this.ProjectModel.findAll({
+        where: {
+          end_date: {
+            [Op.gt]: new Date(),
+          },
+        },
+      });
+
+      return {
+        totalCourses: totalCourses.length,
+        totalProjects: totalProjects.length,
+        monthPayment: payment,
+        inProgressProjects: inProgressProjects.length,
+      };
+    } catch (error) {
+      throw new Error(`Failed to fetch user statistics: ${error.message}`);
+    }
+  }
+
+  async instructorStatistics(instructorID: string) {
+    try {
+      const instructorAccount = await this.InstructorModel.findOne({
+        where: { instructor_id: instructorID },
+      });
+      const endedProjects = await this.ProjectModel.findAll({
+        where: {
+          project_instructor: instructorAccount.id,
+          end_date: {
+            [Op.lt]: new Date(),
+          },
+        },
+      });
+      const awaitProjects = await this.ProjectModel.findAll({
+        where: {
+          project_instructor: instructorAccount.id,
+          end_date: {
+            [Op.gt]: new Date(),
+          },
+        },
+      });
+      let courses = await this.CourseModel.findAll({
+        where: { course_instructor: instructorAccount.id },
+      });
+      const coursesID = courses.map((course) => course.course_id);
+      const enrollments = await this.enrollmentsModel.findAll({
+        where: {
+          course_id: { [Op.in]: coursesID },
+          payed_for: true,
+        },
+      });
+      const userIDs = enrollments.map((enrollment) => enrollment.student_id);
+      const subscriptionStudents = await this.paymentModel.findAll({
+        where: { user_id: { [Op.in]: userIDs } },
+      });
+
+      const totalCourses = courses.length;
+      const subscribedCourses = new Set(
+        enrollments.map((enrollment) => enrollment.course_id),
+      );
+      const numberOfSubscribedCourses = subscribedCourses.size;
+      const subscriptionPercentage =
+        totalCourses > 0 ? (numberOfSubscribedCourses / totalCourses) * 100 : 0;
+
+      const projectStatistics = [];
+      for (const project of awaitProjects) {
+        // Fetch tasks for the current project
+        const tasks = await this.tasksModel.findAll({
+          where: { project_id: project.project_id },
+        });
+        // Count completed tasks
+        const totalTasks = tasks.length;
+        const completedTasks = tasks.filter(
+          (task) => task.status === 'completed',
+        ).length;
+        // Calculate the percentage of completed tasks
+        const completionPercentage =
+          totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+        // Add the project statistics to the array
+        projectStatistics.push({
+          name: project.project_name, // Assuming project has a 'name' field
+          data: [Math.round(completionPercentage)], // Round for readability
+        });
+      }
+      return {
+        endedProjects: endedProjects.length,
+        awaitProjects: awaitProjects.length,
+        paymentMonth: enrollments.length * 5,
+        subscriptionStudents: subscriptionStudents.length,
+        subscriptionPercentage: Math.round(subscriptionPercentage),
+        projectStatistics: projectStatistics,
+      };
+    } catch (error) {
+      throw new Error(
+        `Failed to fetch instructor statistics: ${error.message}`,
+      );
     }
   }
 
