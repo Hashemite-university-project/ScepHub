@@ -86,6 +86,10 @@ export class ProjectService {
       await this.participantsModel.create({
         project_id: newProject.project_id,
       });
+      await this.groupsModel.create({
+        group_name: createProjectDto.project_name,
+        group_project: ProjectGroup.group_id,
+      });
       return { message: 'project Created Successfully!' };
     } catch (error) {
       console.log(error);
@@ -406,7 +410,7 @@ export class ProjectService {
       });
       await this.userGroups.create({
         user_id: student_id,
-        group_id: groupID,
+        group_id: groupID.group_id,
       });
       return { message: 'Student accepted!' };
     } catch (error) {

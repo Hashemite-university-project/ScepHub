@@ -20,7 +20,7 @@ export class Projects extends Model {
   @Column(DataType.STRING)
   project_name: string;
 
-  @Column(DataType.STRING)
+  @Column(DataType.TEXT)
   project_description: string;
 
   @HasMany(() => Tasks)

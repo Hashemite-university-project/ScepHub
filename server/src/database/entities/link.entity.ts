@@ -7,6 +7,7 @@ import {
   ForeignKey,
 } from 'sequelize-typescript';
 import { Students } from './student.entity';
+import { Instructors } from './instructor.entity';
 
 @Table
 export class Links extends Model {
@@ -20,9 +21,13 @@ export class Links extends Model {
   link: string;
 
   @ForeignKey(() => Students)
+  @ForeignKey(() => Instructors)
   @Column({ type: DataType.BIGINT })
   user_link: bigint;
 
   @BelongsTo(() => Students)
   student: Students;
+
+  @BelongsTo(() => Instructors)
+  instructors: Instructors;
 }
