@@ -166,21 +166,24 @@ export class ProjectService {
 
   async getProjectStudents(StudentID: string) {
     try {
-      const projectsID = await this.participantsModel.findAll({
-        where: Sequelize.where(
-          Sequelize.fn(
-            'JSON_CONTAINS',
-            Sequelize.col('joined_Students'),
-            Sequelize.literal(`'[${StudentID}]'`),
+      let projectsID: any;
+      console.log(
+        (projectsID = await this.participantsModel.findAll({
+          where: Sequelize.where(
+            Sequelize.fn(
+              'JSON_CONTAINS',
+              Sequelize.col('joined_Students'),
+              JSON.stringify([`${StudentID}`]),
+            ),
+            true,
           ),
-          true,
-        ),
-      });
+        })),
+      );
       if (!projectsID || projectsID.length === 0) {
         return [];
       }
       const projectIds = projectsID.map(
-        (participant) => participant.project_id,
+        (participant: any) => participant.project_id,
       );
       const studentProjects = await this.ProjectModel.findAll({
         where: {
@@ -193,7 +196,7 @@ export class ProjectService {
             include: [
               {
                 model: Users,
-                as: 'instructor',
+                as: 'user',
               },
             ],
           },
@@ -219,11 +222,9 @@ export class ProjectService {
         include: [
           {
             model: Instructors,
-            as: 'instructor',
             include: [
               {
                 model: Users,
-                as: 'instructor',
               },
             ],
           },
@@ -332,10 +333,10 @@ export class ProjectService {
         is_deleted: false,
       };
       if (name) {
-        whereClause.name = { [Op.iLike]: `%${name}%` };
+        whereClause.project_name = { [Op.iLike]: `%${name}%` };
       }
       const allProjects = await this.ProjectModel.findAll({
-        where: whereClause,
+        // where: whereClause,
         include: [
           {
             model: Instructors,
@@ -348,10 +349,14 @@ export class ProjectService {
           {
             model: Categories,
           },
+          {
+            model: ProjectParticipants,
+          },
         ],
       });
       return allProjects;
     } catch (error) {
+      console.log(error);
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -450,6 +455,197 @@ export class ProjectService {
       };
     } catch (error) {
       console.log(error);
+      throw new HttpException(
+        error.message || 'Internal Server Error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async getInstructorWorkSpace(instructorID: string) {
+    try {
+      const instructor = await this.InstructorModel.findOne({
+        where: {
+          instructor_id: instructorID,
+        },
+      });
+      if (!instructor) {
+        throw new HttpException('Instructor not found', HttpStatus.NOT_FOUND);
+      }
+      const projects = await this.ProjectModel.findAll({
+        where: {
+          project_instructor: instructor.id,
+          is_deleted: false,
+        },
+        include: [
+          {
+            model: Categories,
+            as: 'category',
+          },
+        ],
+      });
+      if (!projects.length) {
+        return [];
+      }
+      const projectIds = projects.map((project) => project.project_id);
+      const participants = await this.participantsModel.findAll({
+        where: {
+          project_id: projectIds,
+        },
+        attributes: [
+          'project_id',
+          [
+            Sequelize.fn('COUNT', Sequelize.col('project_id')),
+            'participantCount',
+          ],
+        ],
+        group: ['project_id'],
+      });
+      const tasks = await this.tasksModel.findAll({
+        where: {
+          project_id: projectIds, // Array of project IDs
+        },
+        attributes: [
+          'project_id',
+          [Sequelize.fn('COUNT', Sequelize.col('project_id')), 'totalTasks'], // Total tasks per project
+          [
+            Sequelize.fn(
+              'SUM',
+              Sequelize.literal(
+                'CASE WHEN status = "completed" THEN 1 ELSE 0 END',
+              ),
+            ),
+            'completedTasks', // Completed tasks per project
+          ],
+        ],
+        group: ['project_id'], // Group by project_id to calculate aggregates per project
+      });
+      const projectDetails = projects.map((project) => {
+        const participantData = participants.find(
+          (p) => p.project_id === project.project_id,
+        );
+        const taskData = tasks.find((t) => t.project_id === project.project_id);
+
+        return {
+          id: project.project_id,
+          name: project.project_name,
+          category: project.category?.category_name || 'Uncategorized',
+          image: project.project_img,
+          participantsCount: participantData
+            ? parseInt(participantData.getDataValue('participantCount'))
+            : 0,
+          totalTasks: taskData
+            ? parseInt(taskData.getDataValue('totalTasks'))
+            : 0,
+          completedTasks: taskData
+            ? parseInt(taskData.getDataValue('completedTasks'))
+            : 0,
+        };
+      });
+      return projectDetails;
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(
+        error.message || 'Internal Server Error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async getInstructorWorkSpaceTasks(
+    project_id: string,
+    active: string,
+    task_name: string,
+  ) {
+    try {
+      let tasks: any;
+      const searchCondition = task_name
+        ? { title: { [Op.like]: `%${task_name}%` } }
+        : {};
+      if (active === 'Active') {
+        const allTasks = await this.tasksModel.findAll({
+          where: {
+            project_id: project_id,
+            due_date: { [Op.gt]: new Date() },
+            ...searchCondition,
+          },
+          include: [
+            {
+              model: Students,
+              include: [
+                {
+                  model: Users,
+                },
+              ],
+            },
+          ],
+        });
+        tasks = allTasks.filter((task) => task.status === 'completed');
+      } else {
+        const allTasks = await this.tasksModel.findAll({
+          where: {
+            project_id: project_id,
+            due_date: { [Op.gt]: new Date() },
+            ...searchCondition,
+          },
+          include: [
+            {
+              model: Students,
+              include: [
+                {
+                  model: Users,
+                },
+              ],
+            },
+          ],
+        });
+        tasks = allTasks.filter((task) => task.status === 'in_progress');
+      }
+      const formattedData = {
+        project_id,
+        tasks,
+      };
+      return formattedData;
+    } catch (error) {
+      console.error(error);
+      throw new HttpException(
+        error.message || 'Internal Server Error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async getProjectTasksNumber(StudentID: string, project_id: string) {
+    try {
+      const studentAccount = await this.StudentModel.findOne({
+        where: {
+          user_id: StudentID,
+        },
+      });
+      if (!studentAccount) {
+        throw new HttpException('Student not found', HttpStatus.NOT_FOUND);
+      }
+      console.log(studentAccount);
+      const tasks = await this.tasksModel.findAll({
+        where: {
+          project_id: project_id,
+          assigned_to: studentAccount.user_id,
+          status: 'in_progress',
+        },
+      });
+      if (!tasks.length) {
+        return { UncompletedTasks: 0, ClosestTimeToSubmit: null };
+      }
+      const closestTask = tasks.reduce((closest, task) => {
+        const taskDueDate = new Date(task.due_date);
+        const closestDueDate = closest ? new Date(closest.due_date) : null;
+        return !closestDueDate || taskDueDate < closestDueDate ? task : closest;
+      }, null);
+      return {
+        UncompletedTasks: tasks.length,
+        ClosestTimeToSubmit: closestTask ? closestTask.due_date : null,
+      };
+    } catch (error) {
       throw new HttpException(
         error.message || 'Internal Server Error',
         HttpStatus.INTERNAL_SERVER_ERROR,

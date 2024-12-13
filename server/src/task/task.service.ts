@@ -168,7 +168,7 @@ export class TaskService {
     }
   }
 
-  async returnTask(task_id: string, student_id: string) {
+  async returnTask(task_id: string) {
     try {
       await this.tasksModel.update(
         {
@@ -177,7 +177,6 @@ export class TaskService {
         {
           where: {
             task_id: task_id,
-            assigned_to: student_id,
           },
         },
       );

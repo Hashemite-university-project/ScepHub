@@ -114,6 +114,24 @@ export class ProjectController {
 
   @ApiResponse({
     status: 200,
+    description: 'return the tasks numbers for every project for the student',
+  })
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.Student)
+  @Get('student/tasksNumber/:project_id')
+  async getProjectTasksNumber(
+    @Req() Request: Request,
+    @Param('project_id') project_id: string,
+  ) {
+    const StudentID = Request['user'].user_id;
+    return await this.projectService.getProjectTasksNumber(
+      StudentID,
+      project_id,
+    );
+  }
+
+  @ApiResponse({
+    status: 200,
     description: 'get the students request for the instructor',
   })
   @UseGuards(AuthGuard, RolesGuard)
@@ -172,6 +190,35 @@ export class ProjectController {
     return await this.projectService.makeRequestToProject(
       project_id,
       studentID,
+    );
+  }
+
+  @ApiResponse({ status: 200, description: 'Get all instructor projects' })
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.Instructor, Role.Admin)
+  @Get('instructorWorkSpace')
+  async getInstructorWorkSpace(@Req() Request: Request) {
+    const instructorID = Request['user'].user_id;
+    return await this.projectService.getInstructorWorkSpace(instructorID);
+  }
+
+  @ApiResponse({
+    status: 200,
+    description: 'Get all instructor tasks for his project',
+  })
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.Instructor, Role.Admin)
+  @Get('instructor/allTasks/:project_id/:active')
+  async getInstructorWorkSpaceTasks(
+    @Req() Request: Request,
+    @Param('project_id') project_id: string,
+    @Param('active') active: string,
+    @Query('task_name') task_name?: string,
+  ) {
+    return await this.projectService.getInstructorWorkSpaceTasks(
+      project_id,
+      active,
+      task_name,
     );
   }
 }

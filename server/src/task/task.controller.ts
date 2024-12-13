@@ -123,12 +123,8 @@ export class TaskController {
   @ApiResponse({ status: 201 })
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(Role.Instructor)
-  @Put('instructor/returnTask/:task_id/:student_id')
-  async returnTask(
-    @Req() Request: Request,
-    @Param('task_id') task_id: string,
-    @Param('student_id') student_id: string,
-  ) {
-    return await this.taskService.returnTask(task_id, student_id);
+  @Put('instructor/returnTask/:task_id')
+  async returnTask(@Req() Request: Request, @Param('task_id') task_id: string) {
+    return await this.taskService.returnTask(task_id);
   }
 }

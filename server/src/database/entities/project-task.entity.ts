@@ -8,6 +8,7 @@ import {
 } from 'sequelize-typescript';
 import { Projects } from './project.entity';
 import { Users } from './user.entity';
+import { Students } from './student.entity';
 
 @Table
 export class Tasks extends Model {
@@ -18,7 +19,7 @@ export class Tasks extends Model {
   @Column({ type: DataType.BIGINT })
   project_id: bigint;
 
-  @ForeignKey(() => Users)
+  @ForeignKey(() => Students)
   @Column({ type: DataType.BIGINT })
   assigned_to: bigint;
 
@@ -46,6 +47,6 @@ export class Tasks extends Model {
   @BelongsTo(() => Projects)
   project: Projects;
 
-  @BelongsTo(() => Users)
-  assignedUser: Users;
+  @BelongsTo(() => Students)
+  assignedUser: Students;
 }

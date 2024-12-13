@@ -84,3 +84,4 @@ This platform enables university students to:
 - MySQL database
 - Firebase account
 - Stripe account
+- Stripe CLI for WebHook
