@@ -153,6 +153,7 @@ export class CourseService {
       });
       const whereClause: any = {
         course_instructor: instructor_user.id,
+        is_deleted: false,
       };
       if (courseName) {
         whereClause.course_name = {

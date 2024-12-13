@@ -36,7 +36,8 @@ export class AuthGuard implements CanActivate {
         request['user'] = user.dataValues;
         return true;
       } catch (error) {
-        if (error.name === 'UnauthorizedException' && refresh_token) {
+        console.log(error.name);
+        if (error.name === 'TokenExpiredError' && refresh_token) {
           try {
             const refreshPayload = await this.jwtService.verifyAsync(
               refresh_token,
@@ -48,7 +49,6 @@ export class AuthGuard implements CanActivate {
             if (!user || !user.dataValues.user_email) {
               throw new UnauthorizedException('Refresh token invalid');
             }
-
             const newAccessToken = this.jwtService.sign(
               {
                 user_id: user.user_id,
@@ -60,13 +60,11 @@ export class AuthGuard implements CanActivate {
                 expiresIn: '15m',
               },
             );
-
             response.cookie('access_token', newAccessToken, {
               httpOnly: true,
               secure: process.env.NODE_ENV === 'production',
               sameSite: 'strict',
             });
-
             request['user'] = user.dataValues;
             return true;
           } catch (refreshError) {
@@ -78,7 +76,7 @@ export class AuthGuard implements CanActivate {
       }
     } catch (error) {
       console.log(error);
-      throw new UnauthorizedException('Invalid or expired access token');
+      throw new UnauthorizedException('error');
     }
   }
 
