@@ -197,6 +197,15 @@ export class CourseController {
     return this.courseService.deleteContent(courseID, contentID);
   }
 
+  @ApiResponse({ status: 200 })
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.Student)
+  @Get('getUnSubCourses')
+  async getUnSubCourses(@Req() Request: Request) {
+    const StudentID = Request['user'].user_id;
+    return this.courseService.getUnSubCourses(StudentID);
+  }
+
   @ApiResponse({
     status: 201,
     description: 'This api for add and delete course from the list',

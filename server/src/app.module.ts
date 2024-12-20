@@ -11,6 +11,7 @@ import { DatabaseModule } from './database/database.module';
 import { BcryptService } from './auth/bcrypt/bcrypt.service';
 import { CategoryModule } from './category/category.module';
 import { TaskModule } from './task/task.module';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { TaskModule } from './task/task.module';
     DatabaseModule,
     CategoryModule,
     TaskModule,
+    EmailModule,
   ],
   controllers: [],
   providers: [BcryptService],

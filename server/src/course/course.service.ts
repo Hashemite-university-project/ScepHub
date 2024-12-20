@@ -12,6 +12,7 @@ import { Op, where } from 'sequelize';
 import { UpdateContentDto } from './dto/update-content.dto';
 import { Enrollments } from 'src/database/entities/enrollment.entity';
 import { Ratings } from 'src/database/entities/rate.entity';
+import { Payments } from 'src/database/entities/payment.entity';
 
 @Injectable()
 export class CourseService {
@@ -24,6 +25,8 @@ export class CourseService {
     private readonly paymentService: PaymentService,
     @Inject('ENROLLMENTS')
     private readonly enrollmentsModel: typeof Enrollments,
+    @Inject('PAYMENTS')
+    private readonly paymentsModel: typeof Payments,
     @Inject('RATINGS')
     private readonly ratingsModel: typeof Ratings,
   ) {}
@@ -72,6 +75,7 @@ export class CourseService {
       const studentSubscription =
         await this.paymentService.getSubscriptionStatus(studentID, role);
       let course_content: any;
+      console.log(studentSubscription.status);
       if (studentSubscription.status == 'active') {
         course_content = await this.contentModel.findAll({
           where: {
@@ -153,7 +157,6 @@ export class CourseService {
       });
       const whereClause: any = {
         course_instructor: instructor_user.id,
-        is_deleted: false,
       };
       if (courseName) {
         whereClause.course_name = {
@@ -353,6 +356,10 @@ export class CourseService {
             [Op.in]: courseIds,
           },
         },
+        include: [
+          { model: Instructors, include: [{ model: Users }] },
+          { model: Categories },
+        ],
       });
       return courses;
     } catch (error) {
@@ -486,6 +493,38 @@ export class CourseService {
         content: courseContent,
         enrollments: enrollments.length,
       };
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async getUnSubCourses(StudentID: string) {
+    try {
+      const unSubCourses = await this.enrollmentsModel.findAll({
+        where: {
+          student_id: StudentID,
+          payed_for: false,
+        },
+        include: [
+          {
+            model: Courses,
+            include: [
+              {
+                model: Categories,
+              },
+              {
+                model: Instructors,
+                include: [
+                  {
+                    model: Users,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      });
+      return unSubCourses;
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }

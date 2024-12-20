@@ -73,7 +73,7 @@ export class ChatService {
         { model: Groups, as: 'group' },
       ],
     });
-    console.log(messages);
+    // console.log(messages);
     return messages;
   }
 
@@ -90,5 +90,56 @@ export class ChatService {
     });
 
     return user?.groups || [];
+  }
+
+  async getChatUsers(userId: number) {
+    // Fetch distinct users the logged-in user has exchanged messages with
+    const users = await this.messagesModel.findAll({
+      where: {
+        [Op.or]: [{ sender_id: userId }, { receiver_id: userId }],
+      },
+      include: [
+        {
+          model: Users,
+          as: 'sender',
+          attributes: ['user_id', 'user_name', 'user_img'],
+        },
+        {
+          model: Users,
+          as: 'receiver',
+          attributes: ['user_id', 'user_name', 'user_img'],
+        },
+      ],
+      group: ['sender_id', 'receiver_id', 'sender.user_id', 'receiver.user_id'],
+    });
+    // console.log(users);
+    // Process the results to return distinct user details
+    const chatUsers = new Map();
+    users.forEach((message: any) => {
+      const sender = message.sender?.dataValues;
+      const receiver = message.receiver?.dataValues;
+
+      if (sender && sender.user_id !== userId)
+        chatUsers.set(sender.user_id, sender);
+      if (receiver && receiver.user_id !== userId)
+        chatUsers.set(receiver.user_id, receiver);
+    });
+    return Array.from(chatUsers.values());
+  }
+
+  async userSearch(userId: string, query: string) {
+    try {
+      const users = await this.UserModel.findAll({
+        where: {
+          user_name: {
+            [Op.like]: `%${query}%`, // Sequelize's LIKE operator
+          },
+        },
+      });
+      return users;
+    } catch (error) {
+      console.error('Error in user search:', error);
+      throw new Error('Failed to search users');
+    }
   }
 }
