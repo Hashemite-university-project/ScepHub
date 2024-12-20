@@ -22,7 +22,10 @@ export class AuthGuard implements CanActivate {
       const response: Response = context.switchToHttp().getResponse();
       const access_token: string = request.cookies['access_token'];
       const refresh_token: string = request.cookies['refresh_token'];
-      console.log(request.cookies);
+      //   console.log(
+      //     request.cookies['access_token'],
+      //     request.cookies['refresh_token'],
+      //   );
       try {
         if (!access_token) throw new UnauthorizedException(access_token);
         const userPayload = await this.jwtService.verifyAsync(access_token, {
@@ -32,12 +35,11 @@ export class AuthGuard implements CanActivate {
         if (!user || !user.dataValues.user_email) {
           throw new UnauthorizedException('Access token missing');
         }
-        // console.log(user);
         request['user'] = user.dataValues;
         return true;
       } catch (error) {
-        console.log(error.name);
-        if (error.name === 'TokenExpiredError' && refresh_token) {
+        // console.log('New Refresh Token');
+        if (refresh_token) {
           try {
             const refreshPayload = await this.jwtService.verifyAsync(
               refresh_token,
@@ -71,7 +73,7 @@ export class AuthGuard implements CanActivate {
             throw new UnauthorizedException('Invalid or expired refresh token');
           }
         } else {
-          throw new UnauthorizedException('Invalid or expired access token');
+          throw new UnauthorizedException('Invalid or expired refresh token');
         }
       }
     } catch (error) {
@@ -81,7 +83,6 @@ export class AuthGuard implements CanActivate {
   }
 
   private async findUser(payload: any) {
-    console.log(payload.userPayload);
     const user = await this.UserModel.findOne({
       where: {
         user_id: payload.userPayload.user_id,

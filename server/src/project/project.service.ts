@@ -167,18 +167,16 @@ export class ProjectService {
   async getProjectStudents(StudentID: string) {
     try {
       let projectsID: any;
-      console.log(
-        (projectsID = await this.participantsModel.findAll({
-          where: Sequelize.where(
-            Sequelize.fn(
-              'JSON_CONTAINS',
-              Sequelize.col('joined_Students'),
-              JSON.stringify([`${StudentID}`]),
-            ),
-            true,
+      projectsID = await this.participantsModel.findAll({
+        where: Sequelize.where(
+          Sequelize.fn(
+            'JSON_CONTAINS',
+            Sequelize.col('joined_Students'),
+            JSON.stringify([`${StudentID}`]),
           ),
-        })),
-      );
+          true,
+        ),
+      }); //joined_Students = ["4"]
       if (!projectsID || projectsID.length === 0) {
         return [];
       }
@@ -625,7 +623,7 @@ export class ProjectService {
       if (!studentAccount) {
         throw new HttpException('Student not found', HttpStatus.NOT_FOUND);
       }
-      console.log(studentAccount);
+      //   console.log(studentAccount);
       const tasks = await this.tasksModel.findAll({
         where: {
           project_id: project_id,

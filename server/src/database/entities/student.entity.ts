@@ -31,8 +31,8 @@ export class Students extends Model {
   @Column(DataType.STRING)
   major: string;
 
-  @Column({ type: DataType.STRING, defaultValue: null })
-  about_me: bigint;
+  @Column({ type: DataType.TEXT, defaultValue: null })
+  about_me: string;
 
   @Column({ type: DataType.TEXT, defaultValue: null })
   user_cv: string;

@@ -200,7 +200,6 @@ export class UserService {
   async userInfo(userID: string) {
     try {
       const userInfo = await this.UserModel.findByPk(userID);
-      console.log(userInfo);
       if (!userInfo) throw new NotFoundException();
       return userInfo;
     } catch (error) {
@@ -370,18 +369,26 @@ export class UserService {
         });
         let arrays = String(studentProfile.joined_projects);
         const joinedProjects = JSON.parse(arrays);
+        const projectIds = joinedProjects[0]
+          .split(',')
+          .map((id: string) => parseInt(id, 10));
         let studentProjects: any;
         if (joinedProjects) {
           studentProjects = await this.ProjectModel.findAll({
             where: {
               project_id: {
-                [Op.in]: joinedProjects,
+                [Op.in]: projectIds,
               },
             },
             include: [
               {
                 model: Instructors,
                 as: 'instructor',
+                include: [
+                  {
+                    model: Users,
+                  },
+                ],
               },
               {
                 model: Categories,
@@ -397,6 +404,11 @@ export class UserService {
             student_id: studentProfile.user_id,
             payed_for: true,
           },
+          include: [
+            {
+              model: Courses,
+            },
+          ],
         });
         return {
           user: studentProfile,
@@ -443,8 +455,10 @@ export class UserService {
     try {
       const topStudents = await Students.findAll({
         where: Sequelize.where(
-          Sequelize.fn('JSON_LENGTH', Sequelize.col('joined_projects')),
-          { [Op.gt]: 2 },
+          Sequelize.literal(
+            `(CHAR_LENGTH(joined_projects) - CHAR_LENGTH(REPLACE(joined_projects, ',', ''))) + 1`,
+          ),
+          { [Op.gt]: 1 },
         ),
         attributes: [
           'user_id',

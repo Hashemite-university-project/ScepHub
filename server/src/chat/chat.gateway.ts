@@ -49,11 +49,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       ([userId, clientId]) => clientId === client.id,
     )?.[0];
     const receiverClientId = this.connections.get(payload.receiver_id);
+    let message: any;
     if (receiverClientId) {
-      const message = await this.chatService.createMessage(senderId, payload);
+      message = await this.chatService.createMessage(senderId, payload);
       this.server.to(receiverClientId).emit('receiveMessage', message);
       console.log(`Message sent to user ${payload.receiver_id}`);
     } else {
+      message = await this.chatService.createMessage(senderId, payload);
       console.log(`Receiver ${payload.receiver_id} is not connected`);
     }
   }
