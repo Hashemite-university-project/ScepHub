@@ -304,7 +304,7 @@ export class CourseService {
           updateContentDto.video_description || courseSection.video_description,
       };
       await courseSection.update(updatedData);
-      return 'Content updated successfully!';
+      return courseSection;
     } catch (error) {
       console.error(error);
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -322,7 +322,7 @@ export class CourseService {
       deletedContent.update({
         is_deleted: true,
       });
-      return 'Content Deleted Successfully!';
+      return { status: 201 };
     } catch (error) {
       console.error(error);
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -500,6 +500,7 @@ export class CourseService {
       const courseContent = await this.contentModel.findAll({
         where: {
           course_id: courseID,
+          is_deleted: false,
         },
       });
       const enrollments = await this.enrollmentsModel.findAll({
