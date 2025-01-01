@@ -148,12 +148,12 @@ export class UserController {
     @Body() studentForm: StudentFormDto,
     @Req() Request: Request,
   ) {
-    const studentCV = Request['fileUrl'];
+    const profileIMG = Request['fileUrl'];
     const studentID = Request['user'].user_id;
     await this.userService.setStudentInformation(
       studentID,
       studentForm,
-      studentCV,
+      profileIMG,
     );
     return {
       statusCode: HttpStatus.OK,

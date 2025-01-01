@@ -16,6 +16,7 @@ import { Tasks } from 'src/database/entities/project-task.entity';
 import { Projects } from 'src/database/entities/project.entity';
 import { Ratings } from 'src/database/entities/rate.entity';
 import { Reports } from 'src/database/entities/report.entity';
+import { Skills } from 'src/database/entities/skills.entity';
 import { Students } from 'src/database/entities/student.entity';
 import { UserGroups } from 'src/database/entities/user-groups.entity';
 import { Users } from 'src/database/entities/user.entity';
@@ -108,5 +109,9 @@ export const modelsProviders = [
   {
     provide: 'PAYMENTS',
     useValue: Payments,
+  },
+  {
+    provide: 'SKILLS',
+    useValue: Skills,
   },
 ];

@@ -269,4 +269,13 @@ export class CourseController {
   async coursePage(@Req() Request: Request, @Param('id') id: string) {
     return await this.courseService.coursePage(id);
   }
+
+  @ApiResponse({ status: 200 })
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.Student, Role.Instructor, Role.Admin)
+  @Get('getCourseContent/:id')
+  async getCourseContent(@Req() Request: Request) {
+    const StudentID = Request['user'].user_id;
+    return this.courseService.getUnSubCourses(StudentID);
+  }
 }

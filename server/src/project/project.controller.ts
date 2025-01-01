@@ -221,4 +221,19 @@ export class ProjectController {
       task_name,
     );
   }
+
+  @ApiResponse({
+    status: 200,
+    description: 'This is for the projects table in the admin dashboard',
+  })
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  @Get('admin/projectsData')
+  async projectsForAdmin(
+    @Query('search') search: string = '',
+    @Query('page') page: number = 1, // Default to page 1
+    @Query('limit') limit: number = 7, // Default to limit 5
+  ) {
+    return await this.projectService.projectsForAdmin(search, page, limit);
+  }
 }

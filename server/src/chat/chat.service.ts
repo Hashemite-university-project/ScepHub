@@ -78,6 +78,7 @@ export class ChatService {
   }
 
   async getGroupById(groupID: number) {
+    // console.log(groupID);
     const groupMembers = await this.userGroups.findAll({
       where: { group_id: groupID },
     });
