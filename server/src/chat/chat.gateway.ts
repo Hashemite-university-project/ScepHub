@@ -81,6 +81,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client: Socket,
     payload: { group_id: number; message: string },
   ) {
+    console.log(payload);
     let senderId = Array.from(this.connections.entries()).find(
       ([userId, clientId]) => clientId === client.id,
     )?.[0];
@@ -93,7 +94,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         senderId,
         payload,
       );
-      console.log('group members =======>> ', groupMembers);
+      //   console.log('group members =======>> ', groupMembers);
+      console.log(groupMembers);
       groupMembers.forEach((member: UserGroups) => {
         const userId = member.dataValues.user_id; // Access user_id from dataValues
         const receiverClientId = this.connections.get(userId);
@@ -126,11 +128,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   private async getUserIdFromClient(client: Socket) {
+    // console.log(client.handshake.headers);
     const tokenHeader = client.handshake.headers.token;
     if (!tokenHeader) {
       console.log('No token found');
       throw new WsException('Unauthorized: No token provided');
     }
+    console.log(tokenHeader);
     let token: string;
     if (Array.isArray(tokenHeader)) {
       token = tokenHeader[0];
@@ -142,11 +146,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         secret: process.env.SECRET_KEY,
       });
       const user_id = payload.user_id;
-
       return user_id;
     } catch (err) {
       console.error('JWT verification failed:', err.message);
-      throw new WsException('Unauthorized: Invalid token');
+      //   throw new WsException('Unauthorized: Invalid token');
     }
   }
 }

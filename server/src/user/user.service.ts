@@ -53,6 +53,8 @@ export class UserService {
     private readonly enrollmentsModel: typeof Enrollments,
     @Inject('PAYMENTS')
     private readonly paymentModel: typeof Payments,
+    @Inject('SKILLS')
+    private readonly skillsModel: typeof Skills,
     @Inject('PROJECTPARTICIPANTS')
     private readonly participantsModel: typeof ProjectParticipants,
     @Inject('COURSE_REPOSITORY') private readonly CourseModel: typeof Courses,
@@ -239,7 +241,7 @@ export class UserService {
   async setStudentInformation(
     studentID: string,
     studentForm: StudentFormDto,
-    studentCV: string,
+    profileIMG: string,
   ) {
     const transaction = await this.sequelize.transaction();
     try {
@@ -252,19 +254,141 @@ export class UserService {
       if (!student) {
         throw new HttpException('User not found', HttpStatus.NOT_FOUND);
       }
-      const updatedData = await student.update(
+      // Update student general information
+      await student.update(
         {
-          skills: studentForm.skills,
           university_name: studentForm.university_name,
           major: studentForm.major,
           about_me: studentForm.about_me,
-          user_cv: studentCV,
         },
         { transaction },
       );
+      await this.UserModel.update(
+        {
+          user_img: profileIMG || student.dataValues.user_img,
+          phone_number: studentForm.phone_number,
+          user_name: studentForm.user_name,
+        },
+        { where: { user_id: studentID }, transaction },
+      );
+      // Handle skills
+      const skills = JSON.parse(studentForm.skills);
+      const existingSkills = await this.skillsModel.findAll({
+        where: { user_id: studentID },
+        transaction,
+      });
+      const existingSkillIds = existingSkills.map((skill) => skill.skill_id);
+      const skillsToUpdate = [];
+      const skillsToCreate = [];
+      const skillsToDelete = existingSkillIds;
+      for (const skill of skills) {
+        if (skill.skill_id) {
+          // Existing skill
+          skillsToUpdate.push(skill);
+          // Remove from skillsToDelete since it still exists
+          const index = skillsToDelete.indexOf(skill.skill_id);
+          if (index !== -1) skillsToDelete.splice(index, 1);
+        } else {
+          // New skill
+          skillsToCreate.push({
+            skill_name: skill.skill_name,
+            user_id: studentID,
+          });
+        }
+      }
+      // Update existing skills
+      for (const skill of skillsToUpdate) {
+        await this.skillsModel.update(
+          { skill_name: skill.skill_name },
+          { where: { skill_id: skill.skill_id }, transaction },
+        );
+      }
+      // Create new skills
+      console.log('Create new skills', skillsToCreate.length);
+      if (skillsToCreate.length > 0) {
+        await this.skillsModel.bulkCreate(skillsToCreate, { transaction });
+      }
+      // Delete removed skills
+      if (skillsToDelete.length > 0) {
+        await this.skillsModel.destroy({
+          where: { skill_id: skillsToDelete },
+          transaction,
+        });
+      }
+      const links = JSON.parse(studentForm.links); // Parse links JSON string
+      console.log('Parsed links:', links);
+      const existingLinks = await this.linkModel.findAll({
+        where: { user_link: studentID },
+        transaction,
+      });
+      const existingLinkIds = existingLinks.map((link) => link.link_id);
+      const linksToUpdate = [];
+      const linksToCreate = [];
+      const linksToDelete = [...existingLinkIds];
+      console.log('Existing Link IDs:', existingLinkIds);
+      // Check each link in the input
+      for (const link of links) {
+        if (existingLinkIds.includes(link.link_id)) {
+          const index = linksToDelete.indexOf(link.link_id);
+          if (index !== -1) linksToDelete.splice(index, 1); // Remove from delete list
+          linksToUpdate.push(link);
+        } else {
+          // New link (no link_id) or new link_id not found - generate a new link_id
+          link.link_id = Date.now();
+          linksToCreate.push({
+            link_name: link.link_name,
+            link: link.link,
+            user_link: studentID,
+          });
+        }
+      }
+      if (linksToUpdate.length > 0) {
+        for (const link of linksToUpdate) {
+          try {
+            await this.linkModel.update(
+              { link_name: link.link_name, link: link.link },
+              {
+                where: { link_id: link.link_id, user_link: studentID },
+                transaction,
+              },
+            );
+            console.log(`Updated link with id: ${link.link_id}`);
+          } catch (error) {
+            console.error(
+              `Error updating link with id: ${link.link_id}`,
+              error,
+            );
+            throw error;
+          }
+        }
+      }
+      // Create new links
+      if (linksToCreate.length > 0) {
+        try {
+          console.log('Creating new links:', linksToCreate);
+          await this.linkModel.bulkCreate(linksToCreate, { transaction });
+        } catch (error) {
+          console.error('Error creating new links:', error);
+          throw error; // Re-throw the error for further handling
+        }
+      }
+      // Delete removed links
+      if (linksToDelete.length > 0) {
+        try {
+          console.log('Deleting removed links:', linksToDelete);
+          await this.linkModel.destroy({
+            where: { link_id: linksToDelete, user_link: studentID },
+            transaction,
+          });
+        } catch (error) {
+          console.error('Error deleting removed links:', error);
+          throw error;
+        }
+      }
       await transaction.commit();
-      return updatedData.dataValues;
+      return student.dataValues;
     } catch (error) {
+      console.log(error);
       await transaction.rollback();
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -650,7 +774,6 @@ export class UserService {
         };
       } else {
         const adminProfile = await this.UserModel.findByPk(userID);
-        console.log(adminProfile);
         return {
           user: adminProfile,
           role: adminProfile.role,

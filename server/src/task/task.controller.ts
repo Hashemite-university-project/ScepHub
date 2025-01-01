@@ -11,6 +11,7 @@ import {
   UseGuards,
   HttpException,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import { TaskService } from './task.service';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -126,5 +127,28 @@ export class TaskController {
   @Put('instructor/returnTask/:task_id')
   async returnTask(@Req() Request: Request, @Param('task_id') task_id: string) {
     return await this.taskService.returnTask(task_id);
+  }
+
+  @ApiResponse({ status: 200 })
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.Student)
+  @Get('student/tasksForStudentProject/:project_id')
+  async getAllStudentTasksPagination(
+    @Req() request: Request,
+    @Param('project_id') project_id: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 6,
+    @Query('status') status: string = 'in_progress',
+  ) {
+    const StudentID = request['user'].user_id;
+    const search = request['query']?.searchQuery || '';
+    return await this.taskService.getAllStudentTasksPagination(
+      StudentID,
+      project_id,
+      page,
+      limit,
+      search,
+      status,
+    );
   }
 }

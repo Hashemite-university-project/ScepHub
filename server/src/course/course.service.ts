@@ -133,17 +133,35 @@ export class CourseService {
 
   async activateCourse(courseID: string) {
     try {
-      await this.CourseModel.update(
-        {
-          is_deleted: false,
-        },
-        {
-          where: {
-            course_id: courseID,
+      //   console.log(courseID);
+      const theCourse = await this.CourseModel.findByPk(courseID);
+      if (theCourse.is_deleted === false) {
+        await this.CourseModel.update(
+          {
+            is_deleted: true,
           },
-        },
-      );
-      return 'The course activate successfully!';
+          {
+            where: {
+              course_id: courseID,
+            },
+          },
+        );
+        return 'The course deleted successfully!';
+      }
+      {
+        await this.CourseModel.update(
+          {
+            is_deleted: false,
+          },
+          {
+            where: {
+              course_id: courseID,
+            },
+          },
+        );
+
+        return 'The course activate successfully!';
+      }
     } catch (error) {
       console.error(error);
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -343,6 +361,7 @@ export class CourseService {
       const myList = await this.enrollmentsModel.findAll({
         where: {
           student_id: studentID,
+          payed_for: true,
         },
         attributes: ['course_id'],
       });

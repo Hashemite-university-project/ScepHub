@@ -13,6 +13,7 @@ import { Groups } from 'src/database/entities/groups.entity';
 import { stringify } from 'querystring';
 import { Tasks } from 'src/database/entities/project-task.entity';
 import { UserGroups } from 'src/database/entities/user-groups.entity';
+import { tasks } from 'googleapis/build/src/apis/tasks';
 
 @Injectable()
 export class ProjectService {
@@ -176,7 +177,7 @@ export class ProjectService {
           ),
           true,
         ),
-      }); //joined_Students = ["4"]
+      });
       if (!projectsID || projectsID.length === 0) {
         return [];
       }
@@ -201,6 +202,9 @@ export class ProjectService {
           {
             model: Categories,
             as: 'category',
+          },
+          {
+            model: Tasks,
           },
         ],
       });
@@ -431,23 +435,30 @@ export class ProjectService {
       const projectParticipant = await this.participantsModel.findOne({
         where: { project_id: project_id },
       });
-      if (!projectParticipant) {
-        return 'Project not found!';
-      }
-      let joinedStudents = projectParticipant.joined_Students || [];
-      if (
-        projectParticipant.students_requests &&
-        projectParticipant.students_requests.includes(student.user_id)
-      ) {
-        return {
-          message: 'You have already made a request to join this project',
-        };
+      let joinedStudents = [];
+      if (projectParticipant) {
+        joinedStudents = projectParticipant.joined_Students;
+        if (
+          projectParticipant.students_requests &&
+          projectParticipant.students_requests.includes(student.user_id)
+        ) {
+          return {
+            message: 'You have already made a request to join this project',
+          };
+        }
       }
       joinedStudents = [...joinedStudents, student.user_id];
-      await projectParticipant.update(
-        { students_requests: joinedStudents },
-        { where: { project_id: project_id } },
-      );
+      if (!projectParticipant) {
+        this.participantsModel.create({
+          students_requests: joinedStudents,
+          project_id: project_id,
+        });
+      } else {
+        await projectParticipant.update(
+          { students_requests: joinedStudents },
+          { where: { project_id: project_id } },
+        );
+      }
       return {
         message: 'Request to join the project has been sent successfully!',
       };
@@ -560,45 +571,26 @@ export class ProjectService {
       const searchCondition = task_name
         ? { title: { [Op.like]: `%${task_name}%` } }
         : {};
-      if (active === 'Active') {
-        const allTasks = await this.tasksModel.findAll({
-          where: {
-            project_id: project_id,
-            due_date: { [Op.gt]: new Date() },
-            ...searchCondition,
+      //   if (active === 'Active') {
+      const allTasks = await this.tasksModel.findAll({
+        where: {
+          project_id: project_id,
+          //   due_date: { [Op.gt]: new Date() },
+          //   ...searchCondition,
+        },
+        include: [
+          {
+            model: Students,
+            include: [
+              {
+                model: Users,
+              },
+            ],
           },
-          include: [
-            {
-              model: Students,
-              include: [
-                {
-                  model: Users,
-                },
-              ],
-            },
-          ],
-        });
-        tasks = allTasks.filter((task) => task.status === 'completed');
-      } else {
-        const allTasks = await this.tasksModel.findAll({
-          where: {
-            project_id: project_id,
-            due_date: { [Op.gt]: new Date() },
-            ...searchCondition,
-          },
-          include: [
-            {
-              model: Students,
-              include: [
-                {
-                  model: Users,
-                },
-              ],
-            },
-          ],
-        });
-        tasks = allTasks.filter((task) => task.status === 'in_progress');
-      }
+        ],
+      });
+      tasks = allTasks.filter((task) => task.status === 'in_progress');
+
       const formattedData = {
         project_id,
         tasks,
@@ -623,7 +615,6 @@ export class ProjectService {
       if (!studentAccount) {
         throw new HttpException('Student not found', HttpStatus.NOT_FOUND);
       }
-      //   console.log(studentAccount);
       const tasks = await this.tasksModel.findAll({
         where: {
           project_id: project_id,
@@ -631,7 +622,7 @@ export class ProjectService {
           status: 'in_progress',
         },
       });
-      if (!tasks.length) {
+      if (!tasks) {
         return { UncompletedTasks: 0, ClosestTimeToSubmit: null };
       }
       const closestTask = tasks.reduce((closest, task) => {
@@ -644,6 +635,138 @@ export class ProjectService {
         ClosestTimeToSubmit: closestTask ? closestTask.due_date : null,
       };
     } catch (error) {
+      throw new HttpException(
+        error.message || 'Internal Server Error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async getHomeProjectDetails(projectID: string) {
+    try {
+      const projectDetails = await this.ProjectModel.findOne({
+        where: {
+          project_id: projectID,
+        },
+        include: [
+          {
+            model: Instructors,
+            include: [
+              {
+                model: Users,
+              },
+            ],
+          },
+          {
+            model: Categories,
+            as: 'category',
+          },
+        ],
+      });
+      const projectParticipants = await this.participantsModel.findOne({
+        where: {
+          project_id: projectID,
+        },
+      });
+      let joinedStudentIds: bigint[] = [];
+      if (projectParticipants && projectParticipants.joined_Students) {
+        const studentsString = projectParticipants.joined_Students;
+        if (typeof studentsString === 'string') {
+          joinedStudentIds = JSON.parse(studentsString).map((id: string) =>
+            BigInt(id),
+          );
+        } else if (Array.isArray(studentsString)) {
+          joinedStudentIds = studentsString.map((id) => BigInt(id));
+        }
+      }
+      const participants = await this.StudentModel.findAll({
+        where: {
+          user_id: {
+            [Op.in]: joinedStudentIds,
+          },
+        },
+        include: [
+          {
+            model: Users,
+            as: 'user',
+          },
+        ],
+      });
+      return { project: projectDetails, number: participants.length };
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'Internal Server Error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async projectsForAdmin(search: string, page: number, limit: number) {
+    try {
+      // Calculate offset based on the page number and limit
+      const offset = (page - 1) * limit;
+
+      const whereConditions: any = {
+        project_name: {
+          [Op.like]: `%${search}%`,
+        },
+      };
+
+      // Fetch projects with pagination
+      const { rows, count } = await this.ProjectModel.findAndCountAll({
+        where: whereConditions,
+        limit: limit, // Limit number of results
+        offset: offset, // Offset based on page
+        include: [
+          {
+            model: Categories,
+          },
+          {
+            model: Instructors,
+            include: [
+              {
+                model: Users,
+              },
+            ],
+          },
+          {
+            model: Tasks,
+          },
+          {
+            model: ProjectParticipants,
+          },
+        ],
+      });
+
+      const projectsWithMemberCounts = rows.map((project) => {
+        const participants = project.participants || [];
+        const totalMembers = participants.reduce((count, participant) => {
+          if (!participant.joined_Students) {
+            return count;
+          }
+          const students =
+            typeof participant.joined_Students === 'string'
+              ? JSON.parse(participant.joined_Students)
+              : participant.joined_Students;
+          return count + (Array.isArray(students) ? students.length : 0);
+        }, 0);
+        return {
+          ...project.get(),
+          numberOfMembers: totalMembers,
+        };
+      });
+
+      // Calculate total pages for pagination
+      const totalPages = Math.ceil(count / limit);
+
+      return {
+        projects: projectsWithMemberCounts,
+        totalPages,
+        currentPage: page,
+        totalItems: count,
+      };
+    } catch (error) {
+      console.log(error);
       throw new HttpException(
         error.message || 'Internal Server Error',
         HttpStatus.INTERNAL_SERVER_ERROR,

@@ -9,6 +9,7 @@ import { Sequelize } from 'sequelize';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { title } from 'process';
 import { CreateTaskDto } from './dto/create-task.dto';
+import sequelize from 'sequelize';
 
 @Injectable()
 export class TaskService {
@@ -149,6 +150,7 @@ export class TaskService {
 
   async taskDelivery(task_id: string, StudentID: string, task_link: string) {
     try {
+      console.log(task_id, StudentID);
       await this.tasksModel.update(
         {
           task_delivery: task_link,
@@ -182,6 +184,58 @@ export class TaskService {
       );
       return { message: 'Task returned!' };
     } catch (error) {
+      throw new HttpException(
+        error.message || 'Internal Server Error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async getAllStudentTasksPagination(
+    StudentID: string,
+    project_id: string,
+    page: number,
+    limit: number,
+    search: string,
+    status: string,
+  ) {
+    try {
+      const pageNumber = page < 1 ? 1 : page;
+      const limitNumber = limit < 1 ? 10 : parseInt(limit.toString(), 10);
+      const skip = (pageNumber - 1) * limitNumber;
+      const studentAccount = await this.StudentModel.findOne({
+        where: { user_id: StudentID },
+      });
+      if (!studentAccount) {
+        throw new HttpException('Student not found', HttpStatus.NOT_FOUND);
+      }
+      const whereConditions: any = {
+        project_id: project_id,
+        assigned_to: studentAccount.user_id,
+      };
+      if (search) {
+        whereConditions[sequelize.Op.or] = [
+          { title: { [sequelize.Op.like]: `%${search}%` } },
+        ];
+      }
+      //   if (status) {
+      //     whereConditions.status = status;
+      //   }
+      const { rows: tasks, count: total } =
+        await this.tasksModel.findAndCountAll({
+          where: whereConditions,
+          offset: skip,
+          limit: limitNumber,
+        });
+      const totalPages = Math.ceil(total / limitNumber);
+      const meta = {
+        totalItems: total,
+        totalPages: totalPages,
+        currentPage: pageNumber,
+      };
+      return { tasks, meta, StudentID };
+    } catch (error) {
+      console.error('Error fetching student tasks:', error);
       throw new HttpException(
         error.message || 'Internal Server Error',
         HttpStatus.INTERNAL_SERVER_ERROR,
