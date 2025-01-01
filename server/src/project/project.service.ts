@@ -773,4 +773,37 @@ export class ProjectService {
       );
     }
   }
+
+  async getAllJoinedStudents(project_id: string) {
+    try {
+      const joinedStudentsIDs = await this.participantsModel.findOne({
+        where: {
+          project_id: project_id,
+        },
+      });
+      const joinedStudentsArray = JSON.parse(
+        joinedStudentsIDs.dataValues.joined_Students,
+      );
+      console.log(joinedStudentsIDs.dataValues.joined_Students); //["4", "7"]
+      const joinedStudents = await this.StudentModel.findAll({
+        where: {
+          user_id: {
+            [Op.in]: joinedStudentsArray.map((id: string) => BigInt(id)), // Convert string IDs to BigInt
+          },
+        },
+        include: [
+          {
+            model: Users,
+          },
+        ],
+      });
+      return joinedStudents;
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(
+        error.message || 'Internal Server Error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }

@@ -236,4 +236,18 @@ export class ProjectController {
   ) {
     return await this.projectService.projectsForAdmin(search, page, limit);
   }
+
+  @ApiResponse({
+    status: 200,
+    description: 'return the all the joined students in the project',
+  })
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.Instructor, Role.Admin)
+  @Get('projectJoinedStudents/:project_id')
+  async getAllJoinedStudents(
+    @Req() Request: Request,
+    @Param('project_id') project_id: string,
+  ) {
+    return await this.projectService.getAllJoinedStudents(project_id);
+  }
 }
