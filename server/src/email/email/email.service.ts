@@ -44,49 +44,49 @@ export class EmailService {
     return accessToken.token;
   }
 
-  async sendEmail(to: string, subject: string, text: string): Promise<void> {
-    try {
-      const accessToken = await this.getAccessToken();
+  //   async sendEmail(to: string, subject: string, text: string): Promise<void> {
+  //     try {
+  //       const accessToken = await this.getAccessToken();
 
-      const mailOptions = {
-        from: process.env.GOOGLE_EMAIL,
-        to,
-        subject,
-        text,
-        auth: {
-          type: 'OAuth2',
-          user: process.env.GOOGLE_EMAIL,
-          accessToken, // Use access token here
-        },
-      };
+  //       const mailOptions = {
+  //         from: process.env.GOOGLE_EMAIL,
+  //         to,
+  //         subject,
+  //         text,
+  //         auth: {
+  //           type: 'OAuth2',
+  //           user: process.env.GOOGLE_EMAIL,
+  //           accessToken, // Use access token here
+  //         },
+  //       };
 
-      await this.transporter.sendMail(mailOptions);
-    } catch (error) {
-      console.error('Error sending email:', error);
-    }
-  }
+  //       await this.transporter.sendMail(mailOptions);
+  //     } catch (error) {
+  //       console.error('Error sending email:', error);
+  //     }
+  //   }
 
-  async sendVerificationEmail(
-    to: string,
-    verificationLink: string,
-  ): Promise<void> {
-    const subject = 'Email Verification';
-    const text = `Please verify your email by clicking the following link: ${verificationLink}`;
-    await this.sendEmail(to, subject, text);
-  }
+  //   async sendVerificationEmail(
+  //     to: string,
+  //     verificationLink: string,
+  //   ): Promise<void> {
+  //     const subject = 'Email Verification';
+  //     const text = `Please verify your email by clicking the following link: ${verificationLink}`;
+  //     await this.sendEmail(to, subject, text);
+  //   }
 
-  generateVerificationToken(email: string): string {
-    const token = crypto.randomBytes(32).toString('hex');
-    this.verificationTokens.set(token, email);
-    setTimeout(() => this.verificationTokens.delete(token), 3600000); // Expire token in 1 hour
-    return token;
-  }
+  //   generateVerificationToken(email: string): string {
+  //     const token = crypto.randomBytes(32).toString('hex');
+  //     this.verificationTokens.set(token, email);
+  //     setTimeout(() => this.verificationTokens.delete(token), 3600000); // Expire token in 1 hour
+  //     return token;
+  //   }
 
-  async verifyToken(token: string): Promise<boolean> {
-    if (this.verificationTokens.has(token)) {
-      this.verificationTokens.delete(token); // Token can only be used once
-      return true;
-    }
-    return false;
-  }
+  //   async verifyToken(token: string): Promise<boolean> {
+  //     if (this.verificationTokens.has(token)) {
+  //       this.verificationTokens.delete(token); // Token can only be used once
+  //       return true;
+  //     }
+  //     return false;
+  //   }
 }

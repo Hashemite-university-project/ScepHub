@@ -26,7 +26,7 @@ import { EmailModule } from './email/email.module';
     DatabaseModule,
     CategoryModule,
     TaskModule,
-    EmailModule,
+    // EmailModule,
   ],
   controllers: [],
   providers: [BcryptService],
