@@ -31,17 +31,17 @@ export class CourseService {
     private readonly ratingsModel: typeof Ratings,
   ) {}
 
-  async getAllCourses(search?: string, page = 1, limit = 10) {
+  async getAllCourses(courseName?: string) {
     try {
-      const offset = (page - 1) * limit;
       const whereCondition: any = { is_deleted: false };
-      if (search) {
-        whereCondition.course_name = { [Op.like]: `%${search}%` };
+      if (courseName) {
+        whereCondition.course_name = { [Op.like]: `%${courseName}%` };
       }
       const allCourses = await this.CourseModel.findAll({
-        where: whereCondition,
-        limit: limit,
-        offset: offset,
+        where: {
+          ...whereCondition,
+          is_deleted: false,
+        },
         include: [
           {
             model: Instructors,
@@ -59,15 +59,7 @@ export class CourseService {
           },
         ],
       });
-      const totalCourses = await this.CourseModel.count({
-        where: whereCondition,
-      });
-      return {
-        courses: allCourses,
-        totalCourses,
-        currentPage: page,
-        totalPages: Math.ceil(totalCourses / limit),
-      };
+      return allCourses;
     } catch (error) {
       console.error(error);
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);

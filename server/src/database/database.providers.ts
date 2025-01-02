@@ -24,8 +24,6 @@ import { GroupMessages } from './entities/group.entitiy';
 import { UserGroups } from './entities/user-groups.entity';
 import { Feedback } from './entities/FAQ.entity';
 import { Skills } from './entities/skills.entity';
-import { AcceptedStudents } from './entities/acceptedStudens.entity';
-import { RejectedStudents } from './entities/rejectedStudens.entity';
 
 dotenv.config();
 
@@ -103,8 +101,6 @@ export const databaseProviders = [
           UserGroups,
           Feedback,
           Skills,
-          AcceptedStudents,
-          RejectedStudents,
         ]);
         await sequelize.sync({ alter: true });
       } catch (error) {

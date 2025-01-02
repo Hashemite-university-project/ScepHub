@@ -174,7 +174,7 @@ export class ProjectController {
     @Req() Request: Request,
     @Param('project_id') project_id: string,
     @Param('student_id') student_id: string,
-    @Body('status') status: boolean,
+    @Body('status') status: any,
   ) {
     return await this.projectService.acceptStudent(
       project_id,
@@ -216,7 +216,7 @@ export class ProjectController {
   @Get('instructor/allTasks/:project_id/:active')
   async getInstructorWorkSpaceTasks(
     @Req() Request: Request,
-    @Param('project_id') project_id: string,
+    @Param('project_id') project_id: string = '2',
     @Param('active') active: string,
     @Query('task_name') task_name?: string,
   ) {

@@ -1,4 +1,3 @@
-import { AcceptedStudents } from 'src/database/entities/acceptedStudens.entity';
 import { Admins } from 'src/database/entities/admin.entity';
 import { Categories } from 'src/database/entities/category.entity';
 import { Contactus } from 'src/database/entities/contact-us.entity';
@@ -16,7 +15,6 @@ import { ProjectParticipants } from 'src/database/entities/Project-Participants.
 import { Tasks } from 'src/database/entities/project-task.entity';
 import { Projects } from 'src/database/entities/project.entity';
 import { Ratings } from 'src/database/entities/rate.entity';
-import { RejectedStudents } from 'src/database/entities/rejectedStudens.entity';
 import { Skills } from 'src/database/entities/skills.entity';
 import { Students } from 'src/database/entities/student.entity';
 import { UserGroups } from 'src/database/entities/user-groups.entity';
@@ -110,13 +108,5 @@ export const modelsProviders = [
   {
     provide: 'SKILLS',
     useValue: Skills,
-  },
-  {
-    provide: 'ACCEPTEDSTUDENTS',
-    useValue: AcceptedStudents,
-  },
-  {
-    provide: 'REJECTEDSTUDENTS',
-    useValue: RejectedStudents,
   },
 ];
