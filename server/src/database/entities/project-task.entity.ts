@@ -30,10 +30,10 @@ export class Tasks extends Model {
   description: string;
 
   @Column({
-    type: DataType.ENUM('in_progress', 'completed'),
+    type: DataType.ENUM('in_progress', 'completed', 'pending_approval'),
     defaultValue: 'in_progress',
   })
-  status: 'in_progress' | 'completed';
+  status: 'in_progress' | 'completed' | 'pending_approval';
 
   @Column(DataType.DATE)
   due_date: Date;

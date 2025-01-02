@@ -90,7 +90,7 @@ export class TaskService {
           },
         },
       );
-      return { message: 'Task updated!' };
+      return { status: 200 };
     } catch (error) {
       throw new HttpException(
         error.message || 'Internal Server Error',
@@ -150,19 +150,24 @@ export class TaskService {
 
   async taskDelivery(task_id: string, StudentID: string, task_link: string) {
     try {
-      console.log(task_id, StudentID);
-      await this.tasksModel.update(
-        {
-          task_delivery: task_link,
-          status: 'completed',
-        },
-        {
-          where: { task_id: task_id, assigned_to: StudentID },
-        },
-      );
-      return { message: 'Task delivered!' };
+      // Fetch the task by primary key
+      const task = await this.tasksModel.findByPk(task_id);
+
+      // Ensure the task exists
+      if (!task) {
+        throw new HttpException('Task not found', HttpStatus.NOT_FOUND);
+      }
+
+      // Update task fields
+      await task.update({
+        task_delivery: task_link,
+        status: 'pending_approval', // Set the status to 'pending_approval'
+      });
+
+      console.log(`Task ${task_id} successfully updated to 'completed'.`);
+      return task;
     } catch (error) {
-      console.log(error);
+      console.error('Error during task update:', error);
       throw new HttpException(
         error.message || 'Internal Server Error',
         HttpStatus.INTERNAL_SERVER_ERROR,

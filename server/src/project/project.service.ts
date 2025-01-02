@@ -14,6 +14,9 @@ import { stringify } from 'querystring';
 import { Tasks } from 'src/database/entities/project-task.entity';
 import { UserGroups } from 'src/database/entities/user-groups.entity';
 import { tasks } from 'googleapis/build/src/apis/tasks';
+import { Skills } from 'src/database/entities/skills.entity';
+import { Links } from 'src/database/entities/link.entity';
+import { Enrollments } from 'src/database/entities/enrollment.entity';
 
 @Injectable()
 export class ProjectService {
@@ -278,6 +281,7 @@ export class ProjectService {
         where: { project_id: projectID },
         attributes: ['students_requests'],
       });
+      console.log(studentsRequests);
       if (!studentsRequests) {
         throw new Error('No requests found for the given project ID');
       }
@@ -300,6 +304,9 @@ export class ProjectService {
         include: [
           {
             model: Users,
+          },
+          {
+            model: Skills,
           },
         ],
       });

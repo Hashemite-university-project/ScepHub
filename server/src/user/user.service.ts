@@ -470,6 +470,7 @@ export class UserService {
   async userProfile(userID: string) {
     try {
       const userProfile = await this.UserModel.findByPk(userID);
+      console.log(userProfile);
       if (!userProfile) {
         throw new Error('User not found');
       }
@@ -491,13 +492,13 @@ export class UserService {
             },
           ],
         });
-        let arrays = String(studentProfile.joined_projects);
-        const joinedProjects = JSON.parse(arrays);
-        const projectIds = joinedProjects[0]
-          .split(',')
-          .map((id: string) => parseInt(id, 10));
         let studentProjects: any;
-        if (joinedProjects) {
+        if (studentProfile.joined_projects) {
+          let arrays = String(studentProfile.joined_projects);
+          const joinedProjects = JSON.parse(arrays);
+          const projectIds = joinedProjects[0]
+            .split(',')
+            .map((id: string) => parseInt(id, 10));
           studentProjects = await this.ProjectModel.findAll({
             where: {
               project_id: {
