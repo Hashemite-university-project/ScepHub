@@ -372,22 +372,21 @@ export class ProjectService {
 
   async deleteProject(project_id: string) {
     try {
-      const [affectedRows] = await this.ProjectModel.update(
-        { is_deleted: true },
-        { where: { project_id: project_id } },
-      );
-      if (affectedRows === 0) {
-        throw new HttpException('Project not found', HttpStatus.NOT_FOUND);
+      const deletedProject = await this.ProjectModel.findByPk(project_id);
+      if (deletedProject.is_deleted === false) {
+        await deletedProject.update({ is_deleted: true });
+        return { message: 'Project deleted successfully' };
+      } else {
+        await deletedProject.update({ is_deleted: false });
+        return { message: 'Project returned successfully' };
       }
-      return { message: 'Project deleted successfully' };
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async acceptStudent(project_id: string, student_id: string) {
+  async acceptStudent(project_id: string, student_id: string, status: boolean) {
     try {
-      console.log(project_id, student_id);
       const studentRequest = await this.participantsModel.findOne({
         where: Sequelize.where(
           Sequelize.literal(
@@ -406,27 +405,38 @@ export class ProjectService {
       if (!student) {
         throw new HttpException('Student not found', HttpStatus.NOT_FOUND);
       }
-      const updatedProjects = student.joined_projects
-        ? [...student.joined_projects, project_id]
-        : [project_id];
-      await this.StudentModel.update(
-        { joined_projects: updatedProjects },
-        { where: { user_id: student_id } },
-      );
-      const updatedStudents = studentRequest.dataValues.joined_students
-        ? [...studentRequest.dataValues.joined_students, student_id]
-        : [student_id];
-      studentRequest.update({ joined_Students: updatedStudents });
-      const groupID = await this.groupsModel.findOne({
-        where: {
-          group_project: project_id,
-        },
-      });
-      await this.userGroups.create({
-        user_id: student_id,
-        group_id: groupID.group_id,
-      });
-      return { message: 'Student accepted!' };
+      if (status === true) {
+        const updatedProjects = student.joined_projects
+          ? [...student.joined_projects, project_id]
+          : [project_id];
+        await this.StudentModel.update(
+          { joined_projects: updatedProjects },
+          { where: { user_id: student_id } },
+        );
+        const updatedStudents = studentRequest.dataValues.joined_students
+          ? [...studentRequest.dataValues.joined_students, student_id]
+          : [student_id];
+        studentRequest.update({ joined_Students: updatedStudents });
+        const groupID = await this.groupsModel.findOne({
+          where: {
+            group_project: project_id,
+          },
+        });
+        await this.userGroups.create({
+          user_id: student_id,
+          group_id: groupID.group_id,
+        });
+        return { message: 'Student accepted!' };
+      } else {
+        const updatedRejectedStudents = studentRequest.dataValues
+          .rejected_students
+          ? [...studentRequest.dataValues.rejected_students, student_id]
+          : [student_id];
+        await studentRequest.update({
+          rejected_students: updatedRejectedStudents,
+        });
+        return { message: 'Student rejected!' };
+      }
     } catch (error) {
       console.error(error);
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
