@@ -17,6 +17,8 @@ import { tasks } from 'googleapis/build/src/apis/tasks';
 import { Skills } from 'src/database/entities/skills.entity';
 import { Links } from 'src/database/entities/link.entity';
 import { Enrollments } from 'src/database/entities/enrollment.entity';
+import { AcceptedStudents } from 'src/database/entities/acceptedStudens.entity';
+import { RejectedStudents } from 'src/database/entities/rejectedStudens.entity';
 
 @Injectable()
 export class ProjectService {
@@ -37,6 +39,10 @@ export class ProjectService {
     @Inject('USERGROUPS')
     private readonly userGroups: typeof UserGroups,
     @Inject('SEQUELIZE') private readonly sequelize: Sequelize,
+    @Inject('ACCEPTEDSTUDENTS')
+    private readonly acceptedStudentsModel: typeof AcceptedStudents,
+    @Inject('GROUPS')
+    private readonly rejectedStudents: typeof RejectedStudents,
   ) {}
 
   async createNewProject(
@@ -239,32 +245,15 @@ export class ProjectService {
           },
         ],
       });
-      const projectParticipants = await this.participantsModel.findOne({
-        where: {
-          project_id: projectID,
-        },
-      });
-      let joinedStudentIds: bigint[] = [];
-      if (projectParticipants && projectParticipants.joined_Students) {
-        const studentsString = projectParticipants.joined_Students;
-        if (typeof studentsString === 'string') {
-          joinedStudentIds = JSON.parse(studentsString).map((id: string) =>
-            BigInt(id),
-          );
-        } else if (Array.isArray(studentsString)) {
-          joinedStudentIds = studentsString.map((id) => BigInt(id));
-        }
-      }
       const participants = await this.StudentModel.findAll({
-        where: {
-          user_id: {
-            [Op.in]: joinedStudentIds,
-          },
-        },
         include: [
           {
-            model: Users,
-            as: 'user',
+            model: Students,
+            include: [
+              {
+                model: Users,
+              },
+            ],
           },
         ],
       });
@@ -279,31 +268,20 @@ export class ProjectService {
     try {
       const studentsRequests = await this.participantsModel.findOne({
         where: { project_id: projectID },
-        attributes: ['students_requests'],
+        attributes: ['student_request_id'],
       });
-      console.log(studentsRequests);
       if (!studentsRequests) {
         throw new Error('No requests found for the given project ID');
       }
-      let userIds: number[];
-      if (typeof studentsRequests.students_requests === 'string') {
-        userIds = JSON.parse(studentsRequests.students_requests);
-      } else if (Array.isArray(studentsRequests.students_requests)) {
-        userIds = studentsRequests.students_requests.map(Number);
-      } else {
-        throw new Error(
-          'Unexpected format for students_requests. Expected a string or array.',
-        );
-      }
-      const studentsProfiles = await this.StudentModel.findAll({
-        where: {
-          user_id: {
-            [Op.in]: userIds,
-          },
-        },
+      const studentsProfiles = await this.participantsModel.findAll({
         include: [
           {
-            model: Users,
+            model: Students,
+            include: [
+              {
+                model: Users,
+              },
+            ],
           },
           {
             model: Skills,
@@ -387,17 +365,12 @@ export class ProjectService {
 
   async acceptStudent(project_id: string, student_id: string, status: boolean) {
     try {
-      const studentRequest = await this.participantsModel.findOne({
-        where: Sequelize.where(
-          Sequelize.literal(
-            `JSON_CONTAINS(students_requests, ${student_id}) AND project_id = ${project_id}`,
-          ),
-          true,
-        ),
+      const projectParticipant = await this.participantsModel.findOne({
+        where: { project_id },
       });
-      if (!studentRequest) {
+      if (!projectParticipant) {
         throw new HttpException(
-          'Student request not found',
+          'student request not found',
           HttpStatus.NOT_FOUND,
         );
       }
@@ -405,41 +378,38 @@ export class ProjectService {
       if (!student) {
         throw new HttpException('Student not found', HttpStatus.NOT_FOUND);
       }
-      if (status === true) {
-        const updatedProjects = student.joined_projects
-          ? [...student.joined_projects, project_id]
-          : [project_id];
-        await this.StudentModel.update(
-          { joined_projects: updatedProjects },
-          { where: { user_id: student_id } },
-        );
-        const updatedStudents = studentRequest.dataValues.joined_students
-          ? [...studentRequest.dataValues.joined_students, student_id]
-          : [student_id];
-        studentRequest.update({ joined_Students: updatedStudents });
-        const groupID = await this.groupsModel.findOne({
-          where: {
-            group_project: project_id,
-          },
+      if (status) {
+        await this.acceptedStudentsModel.create({
+          project_id: project_id,
+          accepted_student: student.dataValues.student_id,
         });
+        const group = await this.groupsModel.findOne({
+          where: { group_project: project_id },
+        });
+        if (!group) {
+          throw new HttpException(
+            'Group not found for the project',
+            HttpStatus.NOT_FOUND,
+          );
+        }
         await this.userGroups.create({
           user_id: student_id,
-          group_id: groupID.group_id,
+          group_id: group.group_id,
         });
-        return { message: 'Student accepted!' };
+        return { message: 'Student accepted successfully!' };
       } else {
-        const updatedRejectedStudents = studentRequest.dataValues
-          .rejected_students
-          ? [...studentRequest.dataValues.rejected_students, student_id]
-          : [student_id];
-        await studentRequest.update({
-          rejected_students: updatedRejectedStudents,
+        this.rejectedStudents.create({
+          project_id: project_id,
+          rejected_student: student.dataValues.user_id,
         });
-        return { message: 'Student rejected!' };
+        return { message: 'Student rejected successfully!' };
       }
     } catch (error) {
       console.error(error);
-      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        error.message || 'Internal Server Error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -449,38 +419,23 @@ export class ProjectService {
       if (!student) {
         throw new HttpException('Student not found', HttpStatus.NOT_FOUND);
       }
+
       const projectParticipant = await this.participantsModel.findOne({
-        where: { project_id: project_id },
+        where: { project_id: project_id, student_request_id: student.user_id },
       });
-      let joinedStudents = [];
       if (projectParticipant) {
-        joinedStudents = projectParticipant.joined_Students;
-        if (
-          projectParticipant.students_requests &&
-          projectParticipant.students_requests.includes(student.user_id)
-        ) {
-          return {
-            message: 'You have already made a request to join this project',
-          };
-        }
-      }
-      joinedStudents = [...joinedStudents, student.user_id];
-      if (!projectParticipant) {
-        this.participantsModel.create({
-          students_requests: joinedStudents,
-          project_id: project_id,
-        });
+        return { message: 'you have a;ready make a request to this project!' };
       } else {
-        await projectParticipant.update(
-          { students_requests: joinedStudents },
-          { where: { project_id: project_id } },
-        );
+        await this.participantsModel.create({
+          project_id: project_id,
+          student_request_id: student.user_id,
+        });
+        return {
+          message: 'Request to join the project has been sent successfully!',
+        };
       }
-      return {
-        message: 'Request to join the project has been sent successfully!',
-      };
     } catch (error) {
-      console.log(error);
+      console.error(error);
       throw new HttpException(
         error.message || 'Internal Server Error',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -680,32 +635,18 @@ export class ProjectService {
           },
         ],
       });
-      const projectParticipants = await this.participantsModel.findOne({
+      const participants = await this.acceptedStudentsModel.findAll({
         where: {
           project_id: projectID,
         },
-      });
-      let joinedStudentIds: bigint[] = [];
-      if (projectParticipants && projectParticipants.joined_Students) {
-        const studentsString = projectParticipants.joined_Students;
-        if (typeof studentsString === 'string') {
-          joinedStudentIds = JSON.parse(studentsString).map((id: string) =>
-            BigInt(id),
-          );
-        } else if (Array.isArray(studentsString)) {
-          joinedStudentIds = studentsString.map((id) => BigInt(id));
-        }
-      }
-      const participants = await this.StudentModel.findAll({
-        where: {
-          user_id: {
-            [Op.in]: joinedStudentIds,
-          },
-        },
         include: [
           {
-            model: Users,
-            as: 'user',
+            model: Students,
+            include: [
+              {
+                model: Users,
+              },
+            ],
           },
         ],
       });
@@ -720,16 +661,12 @@ export class ProjectService {
 
   async projectsForAdmin(search: string, page: number, limit: number) {
     try {
-      // Calculate offset based on the page number and limit
       const offset = (page - 1) * limit;
-
       const whereConditions: any = {
         project_name: {
           [Op.like]: `%${search}%`,
         },
       };
-
-      // Fetch projects with pagination
       const { rows, count } = await this.ProjectModel.findAndCountAll({
         where: whereConditions,
         limit: limit, // Limit number of results
@@ -750,34 +687,37 @@ export class ProjectService {
             model: Tasks,
           },
           {
+            model: AcceptedStudents,
+          },
+          {
+            model: RejectedStudents,
+          },
+          {
             model: ProjectParticipants,
           },
         ],
       });
-
-      const projectsWithMemberCounts = rows.map((project) => {
-        const participants = project.participants || [];
-        const totalMembers = participants.reduce((count, participant) => {
-          if (!participant.joined_Students) {
-            return count;
-          }
-          const students =
-            typeof participant.joined_Students === 'string'
-              ? JSON.parse(participant.joined_Students)
-              : participant.joined_Students;
-          return count + (Array.isArray(students) ? students.length : 0);
-        }, 0);
-        return {
-          ...project.get(),
-          numberOfMembers: totalMembers,
-        };
-      });
-
+      //   const projectsWithMemberCounts = rows.map((project) => {
+      //     const participants = project.participants || [];
+      //     const totalMembers = participants.reduce((count, participant) => {
+      //       if (!participant.joined_Students) {
+      //         return count;
+      //       }
+      //       const students =
+      //         typeof participant.joined_Students === 'string'
+      //           ? JSON.parse(participant.joined_Students)
+      //           : participant.joined_Students;
+      //       return count + (Array.isArray(students) ? students.length : 0);
+      //     }, 0);
+      //     return {
+      //       ...project.get(),
+      //       numberOfMembers: totalMembers,
+      //     };
+      //   });
       // Calculate total pages for pagination
       const totalPages = Math.ceil(count / limit);
-
       return {
-        projects: projectsWithMemberCounts,
+        // projects: projectsWithMemberCounts,
         totalPages,
         currentPage: page,
         totalItems: count,

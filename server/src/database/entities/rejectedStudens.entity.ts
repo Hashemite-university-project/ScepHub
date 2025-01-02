@@ -10,9 +10,9 @@ import { Projects } from './project.entity';
 import { Students } from './student.entity';
 
 @Table
-export class ProjectParticipants extends Model {
+export class RejectedStudents extends Model {
   @Column({ type: DataType.BIGINT, primaryKey: true, autoIncrement: true })
-  participant_id: bigint;
+  rejected_id: bigint;
 
   @ForeignKey(() => Projects)
   @Column({ type: DataType.BIGINT })
@@ -20,7 +20,7 @@ export class ProjectParticipants extends Model {
 
   @ForeignKey(() => Students)
   @Column({ type: DataType.BIGINT })
-  student_request_id: bigint;
+  rejected_student: bigint;
 
   @BelongsTo(() => Projects)
   project: Projects;

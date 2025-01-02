@@ -914,47 +914,121 @@ export class UserService {
 
   async instructorStatistics(instructorID: string) {
     try {
+      // Fetch the instructor account using the provided instructorID
       const instructorAccount = await this.InstructorModel.findOne({
         where: { instructor_id: instructorID },
       });
-      const endedProjects = await this.ProjectModel.findAll({
+
+      if (!instructorAccount) {
+        throw new Error('Instructor not found');
+      }
+
+      const instructorId = instructorAccount.id;
+
+      // 1. Total Courses
+      const totalCourses = await this.CourseModel.count({
         where: {
-          project_instructor: instructorAccount.id,
+          course_instructor: instructorId,
+          is_deleted: false,
+        },
+      });
+
+      // 2. Active Courses
+      const activeCourses = await this.CourseModel.findAll({
+        where: {
+          course_instructor: instructorId,
+          is_deleted: false,
+          // Add additional criteria for "active" courses if applicable
+        },
+        // Optionally, include related models or specific attributes
+      });
+      const activeCoursesCount = activeCourses.length;
+
+      // 3. Completed Projects
+      const completedProjects = await this.ProjectModel.findAll({
+        where: {
+          project_instructor: instructorId,
           end_date: {
             [Op.lt]: new Date(),
           },
+          is_deleted: false,
         },
       });
+      const completedProjectsCount = completedProjects.length;
+
+      // 4. Active Projects (Optional: if you need active projects beyond completed)
+      const activeProjects = await this.ProjectModel.findAll({
+        where: {
+          project_instructor: instructorId,
+          active: true,
+          is_deleted: false,
+        },
+      });
+      const activeProjectsCount = activeProjects.length;
+
+      // 5. Upcoming Deadlines (Next 30 days)
+      const now = new Date();
+      const upcomingDate = new Date();
+      upcomingDate.setDate(now.getDate() + 30);
+
+      const upcomingDeadlines = await this.ProjectModel.findAll({
+        where: {
+          project_instructor: instructorId,
+          end_date: {
+            [Op.between]: [now, upcomingDate],
+          },
+          is_deleted: false,
+        },
+        order: [['end_date', 'ASC']],
+      });
+
+      // Existing Statistics (Retained from your original function)
+      const endedProjects = await this.ProjectModel.findAll({
+        where: {
+          project_instructor: instructorId,
+          end_date: {
+            [Op.lt]: new Date(),
+          },
+          is_deleted: false,
+        },
+      });
+
       const awaitProjects = await this.ProjectModel.findAll({
         where: {
-          project_instructor: instructorAccount.id,
+          project_instructor: instructorId,
           end_date: {
             [Op.gt]: new Date(),
           },
+          is_deleted: false,
         },
       });
+
       let courses = await this.CourseModel.findAll({
-        where: { course_instructor: instructorAccount.id },
+        where: { course_instructor: instructorId, is_deleted: false },
       });
       const coursesID = courses.map((course) => course.course_id);
+
       const enrollments = await this.enrollmentsModel.findAll({
         where: {
           course_id: { [Op.in]: coursesID },
           payed_for: true,
         },
       });
+
       const userIDs = enrollments.map((enrollment) => enrollment.student_id);
       const subscriptionStudents = await this.paymentModel.findAll({
         where: { user_id: { [Op.in]: userIDs } },
       });
 
-      const totalCourses = courses.length;
+      const totalCoursesExisting = courses.length;
       const subscribedCourses = new Set(
         enrollments.map((enrollment) => enrollment.course_id),
       );
       const numberOfSubscribedCourses = subscribedCourses.size;
       const subscriptionPercentage =
-        totalCourses > 0 ? (numberOfSubscribedCourses / totalCourses) * 100 : 0;
+        totalCoursesExisting > 0
+          ? (numberOfSubscribedCourses / totalCoursesExisting) * 100
+          : 0;
 
       const projectStatistics = [];
       for (const project of awaitProjects) {
@@ -972,14 +1046,32 @@ export class UserService {
           totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
         // Add the project statistics to the array
         projectStatistics.push({
-          name: project.project_name, // Assuming project has a 'name' field
+          name: project.project_name, // Assuming project has a 'project_name' field
           data: [Math.round(completionPercentage)], // Round for readability
         });
       }
+
       return {
+        // New Statistics
+        totalCourses,
+        activeCourses: {
+          count: activeCoursesCount,
+          courses: activeCourses,
+        },
+        completedProjects: {
+          count: completedProjectsCount,
+          projects: completedProjects,
+        },
+        upcomingDeadlines: upcomingDeadlines.map((project) => ({
+          project_id: project.project_id,
+          project_name: project.project_name,
+          end_date: project.end_date,
+        })),
+
+        // Existing Statistics
         endedProjects: endedProjects.length,
         awaitProjects: awaitProjects.length,
-        paymentMonth: enrollments.length * 5,
+        paymentMonth: enrollments.length * 5, // Assuming some calculation logic
         subscriptionStudents: subscriptionStudents.length,
         subscriptionPercentage: Math.round(subscriptionPercentage),
         projectStatistics: projectStatistics,
