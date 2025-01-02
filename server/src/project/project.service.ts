@@ -13,12 +13,7 @@ import { Groups } from 'src/database/entities/groups.entity';
 import { stringify } from 'querystring';
 import { Tasks } from 'src/database/entities/project-task.entity';
 import { UserGroups } from 'src/database/entities/user-groups.entity';
-import { tasks } from 'googleapis/build/src/apis/tasks';
 import { Skills } from 'src/database/entities/skills.entity';
-import { Links } from 'src/database/entities/link.entity';
-import { Enrollments } from 'src/database/entities/enrollment.entity';
-import { AcceptedStudents } from 'src/database/entities/acceptedStudens.entity';
-import { RejectedStudents } from 'src/database/entities/rejectedStudens.entity';
 
 @Injectable()
 export class ProjectService {
@@ -39,10 +34,6 @@ export class ProjectService {
     @Inject('USERGROUPS')
     private readonly userGroups: typeof UserGroups,
     @Inject('SEQUELIZE') private readonly sequelize: Sequelize,
-    @Inject('ACCEPTEDSTUDENTS')
-    private readonly acceptedStudentsModel: typeof AcceptedStudents,
-    @Inject('GROUPS')
-    private readonly rejectedStudents: typeof RejectedStudents,
   ) {}
 
   async createNewProject(
@@ -176,16 +167,13 @@ export class ProjectService {
 
   async getProjectStudents(StudentID: string) {
     try {
+      console.log(StudentID);
+      const userAccount = await this.StudentModel.findByPk(StudentID);
       let projectsID: any;
       projectsID = await this.participantsModel.findAll({
-        where: Sequelize.where(
-          Sequelize.fn(
-            'JSON_CONTAINS',
-            Sequelize.col('joined_Students'),
-            JSON.stringify([`${StudentID}`]),
-          ),
-          true,
-        ),
+        where: {
+          student_id: userAccount.dataValues.user_id,
+        },
       });
       if (!projectsID || projectsID.length === 0) {
         return [];
@@ -226,6 +214,7 @@ export class ProjectService {
 
   async getProjectDetails(projectID: string) {
     try {
+      // Fetch the project details along with the instructor and category
       const projectDetails = await this.ProjectModel.findOne({
         where: {
           project_id: projectID,
@@ -236,27 +225,45 @@ export class ProjectService {
             include: [
               {
                 model: Users,
+                as: 'user', // Ensure this alias matches your association
               },
             ],
+            as: 'instructor', // Ensure this alias matches your association
           },
           {
             model: Categories,
             as: 'category',
           },
-        ],
-      });
-      const participants = await this.StudentModel.findAll({
-        include: [
           {
-            model: Students,
+            model: ProjectParticipants,
+            as: 'participants', // Ensure this alias matches your association
+            where: { accepted: 2 }, // Only include accepted participants
+            required: false, // Allows projects with no accepted participants
             include: [
               {
-                model: Users,
+                model: Students,
+                include: [
+                  {
+                    model: Users,
+                    as: 'user', // Ensure this alias matches your association
+                  },
+                ],
+                as: 'student', // Ensure this alias matches your association
               },
             ],
           },
         ],
       });
+
+      if (!projectDetails) {
+        throw new HttpException('Project not found', HttpStatus.NOT_FOUND);
+      }
+
+      // Extract participants from the projectDetails
+      const participants = projectDetails.participants.map(
+        (participant) => participant.student,
+      );
+
       return { projectDetails, participants };
     } catch (error) {
       console.log('Error in getProjectDetails:', error);
@@ -266,28 +273,39 @@ export class ProjectService {
 
   async getStudentsRequests(projectID: string) {
     try {
-      const studentsRequests = await this.participantsModel.findOne({
-        where: { project_id: projectID },
-        attributes: ['student_request_id'],
-      });
-      if (!studentsRequests) {
-        throw new Error('No requests found for the given project ID');
-      }
-      const studentsProfiles = await this.participantsModel.findAll({
+      // Fetch all ProjectParticipants with accepted status '1' (pending) for the given project
+      const pendingRequests = await this.participantsModel.findAll({
+        where: {
+          project_id: projectID,
+          accepted: 1, // 1 => pending
+        },
         include: [
           {
             model: Students,
+            as: 'student', // Ensure this alias matches your association
             include: [
               {
                 model: Users,
+                as: 'user', // Ensure this alias matches your association
+              },
+              {
+                model: Skills,
+                as: 'skills', // Ensure this alias matches your association
               },
             ],
           },
-          {
-            model: Skills,
-          },
         ],
       });
+
+      if (!pendingRequests || pendingRequests.length === 0) {
+        return { message: 'No pending requests for this project.' };
+      }
+
+      // Extract student profiles from the pending requests
+      const studentsProfiles = pendingRequests.map(
+        (request) => request.student,
+      );
+
       return studentsProfiles;
     } catch (error) {
       console.error('Error fetching student requests:', error);
@@ -363,45 +381,59 @@ export class ProjectService {
     }
   }
 
-  async acceptStudent(project_id: string, student_id: string, status: boolean) {
+  async acceptStudent(project_id: string, student_id: string, status: any) {
     try {
+      // Find the specific ProjectParticipant record by project_id and student_id
       const projectParticipant = await this.participantsModel.findOne({
-        where: { project_id },
+        where: {
+          project_id: project_id,
+          student_id: student_id,
+        },
       });
+
       if (!projectParticipant) {
         throw new HttpException(
-          'student request not found',
+          'Student request not found',
           HttpStatus.NOT_FOUND,
         );
       }
+
+      // Find the student record to ensure the student exists
       const student = await this.StudentModel.findByPk(student_id);
       if (!student) {
         throw new HttpException('Student not found', HttpStatus.NOT_FOUND);
       }
+
+      // Determine the new status based on the provided boolean
+      const newStatus = status; // 2 => accepted, 3 => rejected
+
+      // Update the accepted status
+      await projectParticipant.update({ accepted: newStatus });
+
       if (status) {
-        await this.acceptedStudentsModel.create({
-          project_id: project_id,
-          accepted_student: student.dataValues.student_id,
-        });
+        // If the request is accepted, add the student to the project's group
+
+        // Find the group associated with the project
         const group = await this.groupsModel.findOne({
           where: { group_project: project_id },
         });
+
         if (!group) {
           throw new HttpException(
             'Group not found for the project',
             HttpStatus.NOT_FOUND,
           );
         }
+
+        // Add the student to the userGroups
         await this.userGroups.create({
           user_id: student_id,
           group_id: group.group_id,
         });
+
         return { message: 'Student accepted successfully!' };
       } else {
-        this.rejectedStudents.create({
-          project_id: project_id,
-          rejected_student: student.dataValues.user_id,
-        });
+        // If the request is rejected, simply return a success message
         return { message: 'Student rejected successfully!' };
       }
     } catch (error) {
@@ -419,16 +451,15 @@ export class ProjectService {
       if (!student) {
         throw new HttpException('Student not found', HttpStatus.NOT_FOUND);
       }
-
       const projectParticipant = await this.participantsModel.findOne({
-        where: { project_id: project_id, student_request_id: student.user_id },
+        where: { project_id: project_id, student_id: student.user_id },
       });
       if (projectParticipant) {
-        return { message: 'you have a;ready make a request to this project!' };
+        return { message: 'you have already make a request to this project!' };
       } else {
         await this.participantsModel.create({
           project_id: project_id,
-          student_request_id: student.user_id,
+          student_id: student.user_id,
         });
         return {
           message: 'Request to join the project has been sent successfully!',
@@ -546,7 +577,7 @@ export class ProjectService {
       //   if (active === 'Active') {
       const allTasks = await this.tasksModel.findAll({
         where: {
-          project_id: project_id,
+          project_id: 2,
           //   due_date: { [Op.gt]: new Date() },
           //   ...searchCondition,
         },
@@ -635,22 +666,22 @@ export class ProjectService {
           },
         ],
       });
-      const participants = await this.acceptedStudentsModel.findAll({
-        where: {
-          project_id: projectID,
-        },
-        include: [
-          {
-            model: Students,
-            include: [
-              {
-                model: Users,
-              },
-            ],
-          },
-        ],
-      });
-      return { project: projectDetails, number: participants.length };
+      //   const participants = await this.acceptedStudentsModel.findAll({
+      //     where: {
+      //       project_id: projectID,
+      //     },
+      //     include: [
+      //       {
+      //         model: Students,
+      //         include: [
+      //           {
+      //             model: Users,
+      //           },
+      //         ],
+      //       },
+      //     ],
+      //   });
+      //   return { project: projectDetails, number: participants.length };
     } catch (error) {
       throw new HttpException(
         error.message || 'Internal Server Error',
@@ -685,15 +716,6 @@ export class ProjectService {
           },
           {
             model: Tasks,
-          },
-          {
-            model: AcceptedStudents,
-          },
-          {
-            model: RejectedStudents,
-          },
-          {
-            model: ProjectParticipants,
           },
         ],
       });
@@ -733,24 +755,19 @@ export class ProjectService {
 
   async getAllJoinedStudents(project_id: string) {
     try {
-      const joinedStudentsIDs = await this.participantsModel.findOne({
+      const joinedStudents = await this.participantsModel.findAll({
         where: {
           project_id: project_id,
-        },
-      });
-      const joinedStudentsArray = JSON.parse(
-        joinedStudentsIDs.dataValues.joined_Students,
-      );
-      console.log(joinedStudentsIDs.dataValues.joined_Students); //["4", "7"]
-      const joinedStudents = await this.StudentModel.findAll({
-        where: {
-          user_id: {
-            [Op.in]: joinedStudentsArray.map((id: string) => BigInt(id)), // Convert string IDs to BigInt
-          },
+          accepted: 2,
         },
         include: [
           {
-            model: Users,
+            model: Students,
+            include: [
+              {
+                model: Users,
+              },
+            ],
           },
         ],
       });

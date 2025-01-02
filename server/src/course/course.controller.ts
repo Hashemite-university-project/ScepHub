@@ -37,16 +37,8 @@ export class CourseController {
   })
   @UseGuards(AuthGuard)
   @Get('allCourses')
-  async getAllCourses(
-    @Query('search') search?: string,
-    @Query('page') page = 1, // Default to page 1
-    @Query('limit') limit = 10, // Default limit to 10
-  ) {
-    const allCourses = await this.courseService.getAllCourses(
-      search,
-      page,
-      limit,
-    );
+  async getAllCourses(@Query('course_name') search?: string) {
+    const allCourses = await this.courseService.getAllCourses(search);
     return allCourses;
   }
 

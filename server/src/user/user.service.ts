@@ -474,7 +474,9 @@ export class UserService {
       if (!userProfile) {
         throw new Error('User not found');
       }
+
       if (userProfile.role.toString() === '1') {
+        // Student Role
         const studentProfile = await this.StudentModel.findOne({
           where: {
             user_id: userID,
@@ -486,44 +488,57 @@ export class UserService {
             },
             {
               model: Skills,
+              as: 'skills',
             },
             {
               model: Links,
+              as: 'user_link',
             },
           ],
         });
-        let studentProjects: any;
-        if (studentProfile.joined_projects) {
-          let arrays = String(studentProfile.joined_projects);
-          const joinedProjects = JSON.parse(arrays);
-          const projectIds = joinedProjects[0]
-            .split(',')
-            .map((id: string) => parseInt(id, 10));
-          studentProjects = await this.ProjectModel.findAll({
+
+        let studentProjects: Projects[] = [];
+
+        if (studentProfile) {
+          // Fetch all accepted ProjectParticipants for the student
+          const projectParticipants = await this.participantsModel.findAll({
             where: {
-              project_id: {
-                [Op.in]: projectIds,
-              },
+              student_id: userID,
+              accepted: 2, // 2 => accepted
             },
             include: [
               {
-                model: Instructors,
-                as: 'instructor',
+                model: Projects,
+                as: 'project',
                 include: [
                   {
-                    model: Users,
+                    model: Instructors,
+                    as: 'instructor',
+                    include: [
+                      {
+                        model: Users,
+                        as: 'user',
+                      },
+                    ],
+                  },
+                  {
+                    model: Categories,
+                    as: 'category',
                   },
                 ],
               },
-              {
-                model: Categories,
-                as: 'category',
-              },
             ],
           });
+
+          // Extract projects from ProjectParticipants
+          studentProjects = projectParticipants.map(
+            (participant) => participant.project,
+          );
         } else {
-          studentProjects = null;
+          studentProjects = [];
         }
+
+        // Fetch enrolled courses
         const studentCourses = await this.enrollmentsModel.findAll({
           where: {
             student_id: studentProfile.user_id,
@@ -532,9 +547,11 @@ export class UserService {
           include: [
             {
               model: Courses,
+              as: 'course',
             },
           ],
         });
+
         return {
           user: studentProfile,
           projects: studentProjects,
@@ -542,6 +559,7 @@ export class UserService {
           role: userProfile.role,
         };
       } else if (userProfile.role.toString() === '2') {
+        // Instructor Role
         const instructorProfile = await this.InstructorModel.findOne({
           where: {
             instructor_id: userID,
@@ -549,19 +567,47 @@ export class UserService {
           include: [
             {
               model: Users,
+              as: 'user',
             },
           ],
         });
+
+        // Fetch instructor's projects
         const instructorProjects = await this.ProjectModel.findAll({
           where: {
             project_instructor: instructorProfile.id,
           },
+          include: [
+            {
+              model: Categories,
+              as: 'category',
+            },
+            {
+              model: Instructors,
+              as: 'instructor',
+              include: [
+                {
+                  model: Users,
+                  as: 'user',
+                },
+              ],
+            },
+          ],
         });
+
+        // Fetch instructor's courses
         const instructorCourses = await this.CourseModel.findAll({
           where: {
             course_instructor: instructorProfile.id,
           },
+          include: [
+            {
+              model: Users,
+              as: 'user',
+            },
+          ],
         });
+
         return {
           user: instructorProfile,
           projects: instructorProjects,
@@ -569,6 +615,7 @@ export class UserService {
           role: userProfile.role,
         };
       }
+
       return null;
     } catch (error) {
       console.log(error);
@@ -665,14 +712,21 @@ export class UserService {
             },
           ],
         });
-        let arrays = String(studentProfile.joined_projects);
-        const joinedProjects = JSON.parse(arrays);
-        let studentProjects: any;
-        if (joinedProjects) {
+        let studentProjects: any = await this.participantsModel.findAll({
+          where: {
+            student_id: studentProfile.user_id,
+            accepted: 2,
+          },
+          attributes: ['project_id'],
+        });
+        if (studentProjects && studentProjects.length > 0) {
+          const projectIds = studentProjects.map(
+            (participant) => participant.project_id,
+          );
           studentProjects = await this.ProjectModel.findAll({
             where: {
               project_id: {
-                [Op.in]: joinedProjects,
+                [Op.in]: projectIds,
               },
             },
             include: [
@@ -694,21 +748,9 @@ export class UserService {
         } else {
           studentProjects = null;
         }
-        const studentCourses = await this.enrollmentsModel.findAll({
-          where: {
-            student_id: studentProfile.user_id,
-            payed_for: true,
-          },
-          include: [
-            {
-              model: Courses,
-            },
-          ],
-        });
         return {
           user: studentProfile,
           projects: studentProjects,
-          courses: studentCourses,
           role: userProfile.role,
         };
       } else if (userProfile.role.toString() === '2') {
@@ -805,9 +847,15 @@ export class UserService {
         },
       });
       const allProjects = await this.participantsModel.findAll({
-        where: Sequelize.literal(
-          `JSON_CONTAINS(joined_Students, '"${studentID}"')`,
-        ),
+        where: {
+          student_id: studentAccount.user_id,
+          accepted: 2,
+        },
+        include: [
+          {
+            model: Projects,
+          },
+        ],
       });
       const projectIds = allProjects.map((project) => project.project_id);
       const completedProjects = await this.ProjectModel.findAll({
@@ -918,13 +966,10 @@ export class UserService {
       const instructorAccount = await this.InstructorModel.findOne({
         where: { instructor_id: instructorID },
       });
-
       if (!instructorAccount) {
         throw new Error('Instructor not found');
       }
-
       const instructorId = instructorAccount.id;
-
       // 1. Total Courses
       const totalCourses = await this.CourseModel.count({
         where: {
@@ -1082,19 +1127,4 @@ export class UserService {
       );
     }
   }
-
-  //   async refreshToken(refreshToken: string) {
-  //     try {
-  //       const refreshPayload =
-  //         await this.jwtService.verifyRefreshToken(refreshToken);
-  //       const newAccessToken = await this.jwtService.generateAccessToken(
-  //         refreshPayload.user_id,
-  //         refreshPayload.user_email,
-  //         refreshPayload.role,
-  //       );
-  //       return newAccessToken;
-  //     } catch (error) {
-  //       throw new UnauthorizedException('Invalid or expired refresh token');
-  //     }
-  //   }
 }

@@ -20,11 +20,14 @@ export class ProjectParticipants extends Model {
 
   @ForeignKey(() => Students)
   @Column({ type: DataType.BIGINT })
-  student_request_id: bigint;
+  student_id: bigint;
+
+  @Column({ type: DataType.BIGINT, defaultValue: 1 })
+  accepted: 1 | 2 | 3; // 1 => pending, 2 => accepted, 3 => rejected
 
   @BelongsTo(() => Projects)
   project: Projects;
 
-  @BelongsTo(() => Projects)
+  @BelongsTo(() => Students)
   student: Students;
 }
