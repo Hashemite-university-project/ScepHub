@@ -148,22 +148,16 @@ export class TaskService {
     }
   }
 
-  async taskDelivery(task_id: string, StudentID: string, task_link: string) {
+  async taskDelivery(task_id: string, task_link: string) {
     try {
-      // Fetch the task by primary key
       const task = await this.tasksModel.findByPk(task_id);
-
-      // Ensure the task exists
       if (!task) {
         throw new HttpException('Task not found', HttpStatus.NOT_FOUND);
       }
-
-      // Update task fields
       await task.update({
         task_delivery: task_link,
-        status: 'pending_approval', // Set the status to 'pending_approval'
+        status: 'pending_approval',
       });
-
       console.log(`Task ${task_id} successfully updated to 'completed'.`);
       return task;
     } catch (error) {

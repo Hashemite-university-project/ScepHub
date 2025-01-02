@@ -174,8 +174,13 @@ export class ProjectController {
     @Req() Request: Request,
     @Param('project_id') project_id: string,
     @Param('student_id') student_id: string,
+    @Body('status') status: boolean,
   ) {
-    return await this.projectService.acceptStudent(project_id, student_id);
+    return await this.projectService.acceptStudent(
+      project_id,
+      student_id,
+      status,
+    );
   }
 
   @ApiResponse({ status: 201 })

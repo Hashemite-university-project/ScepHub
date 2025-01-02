@@ -117,8 +117,9 @@ export class TaskController {
     if (!task_link) {
       throw new HttpException('task link is required', HttpStatus.BAD_REQUEST);
     }
+    console.log(task_link);
     const StudentID = Request['user'].user_id;
-    return await this.taskService.taskDelivery(task_id, StudentID, task_link);
+    return await this.taskService.taskDelivery(task_id, task_link);
   }
 
   @ApiResponse({ status: 201 })

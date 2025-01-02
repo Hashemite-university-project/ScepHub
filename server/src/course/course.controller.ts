@@ -33,12 +33,20 @@ export class CourseController {
 
   @ApiResponse({
     status: 200,
-    description: 'Get all courses for all roles with search',
+    description: 'Get all courses for all roles with search and pagination',
   })
   @UseGuards(AuthGuard)
   @Get('allCourses')
-  async getAllCourses(@Query('course_name') courseName?: string) {
-    const allCourses = await this.courseService.getAllCourses(courseName);
+  async getAllCourses(
+    @Query('search') search?: string,
+    @Query('page') page = 1, // Default to page 1
+    @Query('limit') limit = 10, // Default limit to 10
+  ) {
+    const allCourses = await this.courseService.getAllCourses(
+      search,
+      page,
+      limit,
+    );
     return allCourses;
   }
 

@@ -15,7 +15,6 @@ import { Categories } from './entities/category.entity';
 import { Links } from './entities/link.entity';
 import { Payments } from './entities/payment.entity';
 import { Ratings } from './entities/rate.entity';
-import { Reports } from './entities/report.entity';
 import { Contactus } from './entities/contact-us.entity';
 import { ProjectParticipants } from './entities/Project-Participants.entity';
 import * as dotenv from 'dotenv';
@@ -25,6 +24,8 @@ import { GroupMessages } from './entities/group.entitiy';
 import { UserGroups } from './entities/user-groups.entity';
 import { Feedback } from './entities/FAQ.entity';
 import { Skills } from './entities/skills.entity';
+import { AcceptedStudents } from './entities/acceptedStudens.entity';
+import { RejectedStudents } from './entities/rejectedStudens.entity';
 
 dotenv.config();
 
@@ -94,7 +95,6 @@ export const databaseProviders = [
           Links,
           Payments,
           Ratings,
-          Reports,
           Contactus,
           ProjectParticipants,
           Enrollments,
@@ -103,6 +103,8 @@ export const databaseProviders = [
           UserGroups,
           Feedback,
           Skills,
+          AcceptedStudents,
+          RejectedStudents,
         ]);
         await sequelize.sync({ alter: true });
       } catch (error) {

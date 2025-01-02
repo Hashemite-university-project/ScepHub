@@ -6,7 +6,6 @@ import { ProjectModule } from './project/project.module';
 import { ChatModule } from './chat/chat.module';
 import { PaymentModule } from './payment/payment.module';
 import { ContactUsModule } from './contact-us/contact-us.module';
-import { ReportModule } from './report/report.module';
 import { DatabaseModule } from './database/database.module';
 import { BcryptService } from './auth/bcrypt/bcrypt.service';
 import { CategoryModule } from './category/category.module';
@@ -22,7 +21,6 @@ import { EmailModule } from './email/email.module';
     ChatModule,
     PaymentModule,
     ContactUsModule,
-    ReportModule,
     DatabaseModule,
     CategoryModule,
     TaskModule,
