@@ -250,11 +250,7 @@ export class UserController {
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(Role.Admin)
   @Put('deleteAccount/:id')
-  async deleteAccount(
-    @Req() Request: Request,
-    @Param('id') user_id: string,
-    @Body('status') status: boolean,
-  ) {
-    return await this.userService.deleteAccount(user_id, status);
+  async deleteAccount(@Req() Request: Request, @Param('id') user_id: string) {
+    return await this.userService.deleteAccount(user_id);
   }
 }

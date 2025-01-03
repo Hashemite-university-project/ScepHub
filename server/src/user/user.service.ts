@@ -215,6 +215,11 @@ export class UserService {
         where: { user_email: clientSignInDto.user_email },
       });
       if (!user) throw new NotFoundException();
+      if (user.is_deleted) {
+        throw new NotFoundException(
+          `Account with email ${user.user_email} is not Active`,
+        );
+      }
       const passwordCompare = await this.bcryptService.compare(
         clientSignInDto.password,
         user.dataValues.password,
@@ -1128,7 +1133,7 @@ export class UserService {
     }
   }
 
-  async deleteAccount(user_id: string, status: boolean) {
+  async deleteAccount(user_id: string) {
     try {
       const userAccount = await this.UserModel.findOne({
         where: {
@@ -1138,16 +1143,29 @@ export class UserService {
       if (!userAccount) {
         throw new Error('User not found');
       }
-      await this.UserModel.update(
-        { is_deleted: status },
-        {
-          where: {
-            user_id: user_id,
+      if (userAccount.is_deleted === true) {
+        await this.UserModel.update(
+          { is_deleted: false },
+          {
+            where: {
+              user_id: user_id,
+            },
           },
-        },
-      );
+        );
+      } else {
+        await this.UserModel.update(
+          { is_deleted: true },
+          {
+            where: {
+              user_id: user_id,
+            },
+          },
+        );
+      }
       return {
-        message: `Account ${status ? 'deleted' : 'restored'} successfully`,
+        message: `Account ${
+          userAccount.is_deleted ? 'deleted' : 'restored'
+        } successfully`,
       };
     } catch (error) {
       throw new Error(`Failed to delete account: ${error.message}`);
