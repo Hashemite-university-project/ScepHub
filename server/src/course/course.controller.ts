@@ -278,4 +278,16 @@ export class CourseController {
     const StudentID = Request['user'].user_id;
     return this.courseService.getUnSubCourses(StudentID);
   }
+
+  @ApiResponse({ status: 200 })
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.Instructor, Role.Admin)
+  @Get('CourseViewStatistics/:id')
+  async getCourseViewStatistics(
+    @Req() Request: Request,
+    @Param('id') courseID: string,
+  ) {
+    const instructorID = Request['user'].user_id;
+    return this.courseService.getCourseViewStatistics(instructorID, courseID);
+  }
 }

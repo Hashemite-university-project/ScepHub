@@ -549,4 +549,35 @@ export class CourseService {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+
+  async getCourseViewStatistics(instructorID: string, courseID: string) {
+    try {
+      const course = await this.CourseModel.findByPk(courseID);
+      const Students = await this.enrollmentsModel.findAll({
+        where: {
+          course_id: course.course_id,
+          payed_for: true,
+        },
+      });
+      const earnings = Students.length * 4;
+      const startOfWeek = new Date();
+      startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay()); // Set to the start of the current week (Sunday)
+      startOfWeek.setHours(0, 0, 0, 0); // Reset time to midnight
+
+      const weakRegisteredStudents = await this.enrollmentsModel.findAll({
+        where: {
+          course_id: course.course_id,
+          payed_for: true,
+          updatedAt: {
+            [Op.gte]: startOfWeek, // Filter records updated this week
+          },
+        },
+      });
+      const courseChart = weakRegisteredStudents.length;
+      const numberOfStudents = Students.length;
+      return { earnings, courseChart, numberOfStudents };
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
 }
