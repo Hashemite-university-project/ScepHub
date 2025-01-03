@@ -566,21 +566,45 @@ export class ProjectService {
 
   async getInstructorWorkSpaceTasks(
     project_id: string,
-    active: string,
-    task_name: string,
+    status?: string, // New Optional Parameter
+    task_name?: string,
   ) {
     try {
-      let tasks: any;
+      console.log(`Project ID: ${project_id}`);
+
+      // Build search condition based on task_name
       const searchCondition = task_name
         ? { title: { [Op.like]: `%${task_name}%` } }
         : {};
-      //   if (active === 'Active') {
+
+      // Initialize where condition with project_id and searchCondition
+      const whereCondition: any = {
+        project_id: project_id,
+        ...searchCondition,
+      };
+
+      // If status is provided, add it to the where condition
+      if (status) {
+        // Validate status against allowed enum values
+        const allowedStatuses = [
+          'in_progress',
+          'completed',
+          'pending_approval',
+        ];
+        if (!allowedStatuses.includes(status)) {
+          throw new HttpException(
+            `Invalid status value. Allowed values are: ${allowedStatuses.join(
+              ', ',
+            )}`,
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+        whereCondition.status = status;
+      }
+
+      // Fetch tasks from the database with the constructed where condition
       const allTasks = await this.tasksModel.findAll({
-        where: {
-          project_id: 2,
-          //   due_date: { [Op.gt]: new Date() },
-          //   ...searchCondition,
-        },
+        where: whereCondition,
         include: [
           {
             model: Students,
@@ -592,15 +616,20 @@ export class ProjectService {
           },
         ],
       });
-      tasks = allTasks.filter((task) => task.status === 'in_progress');
 
+      // Format the response data
       const formattedData = {
         project_id,
-        tasks,
+        tasks: allTasks,
       };
+
       return formattedData;
     } catch (error) {
-      console.error(error);
+      console.error('Error in getInstructorWorkSpaceTasks:', error.message);
+      // If the error is an instance of HttpException, rethrow it
+      if (error instanceof HttpException) {
+        throw error;
+      }
       throw new HttpException(
         error.message || 'Internal Server Error',
         HttpStatus.INTERNAL_SERVER_ERROR,

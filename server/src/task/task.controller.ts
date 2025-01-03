@@ -126,8 +126,12 @@ export class TaskController {
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(Role.Instructor)
   @Put('instructor/returnTask/:task_id')
-  async returnTask(@Req() Request: Request, @Param('task_id') task_id: string) {
-    return await this.taskService.returnTask(task_id);
+  async returnTask(
+    @Req() Request: Request,
+    @Body('status') status: string,
+    @Param('task_id') task_id: string,
+  ) {
+    return await this.taskService.returnTask(task_id, status);
   }
 
   @ApiResponse({ status: 200 })
