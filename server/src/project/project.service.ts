@@ -810,4 +810,64 @@ export class ProjectService {
       );
     }
   }
+
+  async viewProjectsStatistics(instructorID: string, project_id: string) {
+    try {
+      const instructorProject = await this.ProjectModel.findByPk(project_id);
+      if (!instructorProject) {
+        throw new HttpException('Project not found', HttpStatus.NOT_FOUND);
+      }
+
+      // Fetch all tasks and categorize by status
+      const tasks = await this.tasksModel.findAll({
+        where: { project_id: instructorProject.project_id },
+        attributes: [
+          'status',
+          [Sequelize.fn('COUNT', Sequelize.col('status')), 'count'],
+        ],
+        group: ['status'],
+      });
+
+      const taskCounts = tasks.reduce((acc, task) => {
+        acc[task.status] = task.dataValues.count;
+        return acc;
+      }, {});
+
+      // Fetch all participants and categorize by acceptance status
+      const participants = await this.participantsModel.findAll({
+        where: { project_id: instructorProject.project_id },
+        attributes: [
+          'accepted',
+          [Sequelize.fn('COUNT', Sequelize.col('accepted')), 'count'],
+        ],
+        group: ['accepted'],
+      });
+
+      const participantCounts = participants.reduce((acc, participant) => {
+        acc[participant.accepted] = participant.dataValues.count;
+        return acc;
+      }, {});
+
+      // Prepare final statistics
+      return {
+        numberOfAllTasks:
+          Object.values(taskCounts).reduce(
+            (a, b) => (a as number) + (b as number),
+            0,
+          ) || 0,
+        numberOfPendingTasks: taskCounts['pending_approval'] || 0,
+        numberOfCompletedTasks: taskCounts['completed'] || 0,
+        numberOfInProgressTasks: taskCounts['in_progress'] || 0,
+        numberOfPendingStudents: participantCounts[1] || 0,
+        numberOfRejectedStudents: participantCounts[3] || 0,
+        numberOfAcceptedStudents: participantCounts[2] || 0,
+      };
+    } catch (error) {
+      console.error(error);
+      throw new HttpException(
+        error.message || 'Internal Server Error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }

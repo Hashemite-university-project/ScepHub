@@ -552,31 +552,67 @@ export class CourseService {
 
   async getCourseViewStatistics(instructorID: string, courseID: string) {
     try {
+      // Fetch the course by its primary key (courseID)
       const course = await this.CourseModel.findByPk(courseID);
-      const Students = await this.enrollmentsModel.findAll({
-        where: {
-          course_id: course.course_id,
-          payed_for: true,
-        },
-      });
-      const earnings = Students.length * 4;
-      const startOfWeek = new Date();
-      startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay()); // Set to the start of the current week (Sunday)
-      startOfWeek.setHours(0, 0, 0, 0); // Reset time to midnight
+      if (!course) {
+        throw new HttpException('Course not found', HttpStatus.NOT_FOUND);
+      }
 
-      const weakRegisteredStudents = await this.enrollmentsModel.findAll({
+      // Fetch all students enrolled in the course who have paid
+      const students = await this.enrollmentsModel.findAll({
         where: {
           course_id: course.course_id,
-          payed_for: true,
-          updatedAt: {
-            [Op.gte]: startOfWeek, // Filter records updated this week
-          },
         },
       });
-      const courseChart = weakRegisteredStudents.length;
-      const numberOfStudents = Students.length;
-      return { earnings, courseChart, numberOfStudents };
+
+      // Calculate total earnings (assuming each student pays $4)
+      const numberOfStudents = students.length;
+      const earnings = numberOfStudents * 4;
+
+      // Define the number of weeks to include in the trend
+      const numberOfWeeks = 4;
+      const trendData = [];
+
+      // Get today's date
+      const today = new Date();
+
+      for (let i = numberOfWeeks - 1; i >= 0; i--) {
+        // Calculate the start of the week (Sunday)
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay() - i * 7);
+        startOfWeek.setHours(0, 0, 0, 0); // Reset to midnight
+
+        // Calculate the end of the week (Saturday)
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        endOfWeek.setHours(23, 59, 59, 999); // End of day
+
+        // Count the number of students registered in this week using createdAt
+        const weeklyRegistrations = await this.enrollmentsModel.count({
+          where: {
+            course_id: course.course_id,
+            createdAt: {
+              [Op.between]: [startOfWeek, endOfWeek],
+            },
+          },
+        });
+
+        // Push the data to the trendData array
+        trendData.push({
+          weekStart: startOfWeek.toISOString().split('T')[0], // Format: YYYY-MM-DD
+          weekEnd: endOfWeek.toISOString().split('T')[0],
+          registeredStudents: weeklyRegistrations,
+        });
+      }
+
+      // Return the statistics along with the trend data
+      return {
+        earnings,
+        trendData,
+        numberOfStudents,
+      };
     } catch (error) {
+      console.error('Error in getCourseViewStatistics:', error);
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
