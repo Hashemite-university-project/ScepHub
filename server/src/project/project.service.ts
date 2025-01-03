@@ -728,6 +728,7 @@ export class ProjectService {
           [Op.like]: `%${search}%`,
         },
       };
+
       const { rows, count } = await this.ProjectModel.findAndCountAll({
         where: whereConditions,
         limit: limit, // Limit number of results
@@ -747,29 +748,29 @@ export class ProjectService {
           {
             model: Tasks,
           },
+          {
+            model: ProjectParticipants,
+            required: false, // Optional: include ProjectParticipants, as you want to count them
+          },
         ],
       });
-      //   const projectsWithMemberCounts = rows.map((project) => {
-      //     const participants = project.participants || [];
-      //     const totalMembers = participants.reduce((count, participant) => {
-      //       if (!participant.joined_Students) {
-      //         return count;
-      //       }
-      //       const students =
-      //         typeof participant.joined_Students === 'string'
-      //           ? JSON.parse(participant.joined_Students)
-      //           : participant.joined_Students;
-      //       return count + (Array.isArray(students) ? students.length : 0);
-      //     }, 0);
-      //     return {
-      //       ...project.get(),
-      //       numberOfMembers: totalMembers,
-      //     };
-      //   });
-      // Calculate total pages for pagination
+
+      const projectsWithMemberCounts = rows.map((project) => {
+        // Count the accepted participants
+        const acceptedParticipants = project.participants.filter(
+          (participant) => participant.accepted === 2,
+        );
+
+        return {
+          ...project.get(),
+          numberOfMembers: acceptedParticipants.length,
+        };
+      });
+
       const totalPages = Math.ceil(count / limit);
+
       return {
-        // projects: projectsWithMemberCounts,
+        projects: projectsWithMemberCounts,
         totalPages,
         currentPage: page,
         totalItems: count,
