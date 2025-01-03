@@ -169,19 +169,23 @@ export class TaskService {
     }
   }
 
-  async returnTask(task_id: string) {
+  async returnTask(task_id: string, status: string) {
     try {
-      await this.tasksModel.update(
-        {
-          status: 'in_progress',
-        },
-        {
-          where: {
-            task_id: task_id,
+      if (['in_progress', 'completed', 'pending_approval'].includes(status)) {
+        await this.tasksModel.update(
+          {
+            status: status,
           },
-        },
-      );
-      return { message: 'Task returned!' };
+          {
+            where: {
+              task_id: task_id,
+            },
+          },
+        );
+        return { message: 'Task returned!' };
+      } else {
+        return { message: 'Not Acceptable Status!' };
+      }
     } catch (error) {
       throw new HttpException(
         error.message || 'Internal Server Error',

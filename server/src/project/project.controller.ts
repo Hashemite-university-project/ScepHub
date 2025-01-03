@@ -213,16 +213,16 @@ export class ProjectController {
   })
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(Role.Instructor, Role.Admin)
-  @Get('instructor/allTasks/:project_id/:active')
+  @Get('instructor/allTasks/:project_id')
   async getInstructorWorkSpaceTasks(
-    @Req() Request: Request,
-    @Param('project_id') project_id: string = '2',
-    @Param('active') active: string,
+    @Req() request: Request,
+    @Param('project_id') project_id: string,
     @Query('task_name') task_name?: string,
+    @Query('status') status?: string, // New Query Parameter
   ) {
     return await this.projectService.getInstructorWorkSpaceTasks(
       project_id,
-      active,
+      status, // Pass status to service
       task_name,
     );
   }
