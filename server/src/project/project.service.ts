@@ -84,9 +84,9 @@ export class ProjectService {
           },
         },
       );
-      await this.participantsModel.create({
-        project_id: newProject.project_id,
-      });
+      //   await this.participantsModel.create({
+      //     project_id: newProject.project_id,
+      //   });
       await this.groupsModel.create({
         group_name: createProjectDto.project_name,
         group_project: ProjectGroup.group_id,
@@ -842,13 +842,13 @@ export class ProjectService {
         ],
         group: ['accepted'],
       });
-
+      //   console.log(participants);
       const participantCounts = participants.reduce((acc, participant) => {
         acc[participant.accepted] = participant.dataValues.count;
         return acc;
       }, {});
 
-      // Prepare final statistics
+      //   console.log(participantCounts[1]);
       return {
         numberOfAllTasks:
           Object.values(taskCounts).reduce(

@@ -272,7 +272,7 @@ export class CourseService {
         video_url: vidURL,
         course_id: courseID,
       });
-      return newContent;
+      return { newContent, status: 201 };
     } catch (error) {
       console.error(error);
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
