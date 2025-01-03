@@ -255,4 +255,21 @@ export class ProjectController {
   ) {
     return await this.projectService.getAllJoinedStudents(project_id);
   }
+
+  @ApiResponse({
+    status: 200,
+  })
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.Instructor)
+  @Get('viewProjectsStatistics/:project_id')
+  async viewProjectsStatistics(
+    @Req() Request: Request,
+    @Param('project_id') project_id: string,
+  ) {
+    const instructorID = Request['user'].user_id;
+    return await this.projectService.viewProjectsStatistics(
+      instructorID,
+      project_id,
+    );
+  }
 }
