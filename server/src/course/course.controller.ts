@@ -113,7 +113,7 @@ export class CourseController {
     description: 'this is make the course active and seen by all members',
   })
   @UseGuards(AuthGuard, RolesGuard)
-  @Roles(Role.Instructor)
+  @Roles(Role.Instructor, Role.Admin)
   @Put('activateCourse/:id')
   activateCourse(@Req() Request: Request, @Param('id') courseID?: string) {
     return this.courseService.activateCourse(courseID);
@@ -289,5 +289,16 @@ export class CourseController {
   ) {
     const instructorID = Request['user'].user_id;
     return this.courseService.getCourseViewStatistics(instructorID, courseID);
+  }
+
+  @ApiResponse({
+    status: 200,
+    description: 'Get all courses for all roles with search and pagination',
+  })
+  @UseGuards(AuthGuard)
+  @Get('allCoursesForAdmin')
+  async getAllCoursesForAdmin(@Query('course_name') search?: string) {
+    const allCourses = await this.courseService.getAllCoursesFormAdmin(search);
+    return allCourses;
   }
 }
