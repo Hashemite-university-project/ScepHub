@@ -1127,4 +1127,30 @@ export class UserService {
       );
     }
   }
+
+  async deleteAccount(user_id: string, status: boolean) {
+    try {
+      const userAccount = await this.UserModel.findOne({
+        where: {
+          user_id: user_id,
+        },
+      });
+      if (!userAccount) {
+        throw new Error('User not found');
+      }
+      await this.UserModel.update(
+        { is_deleted: status },
+        {
+          where: {
+            user_id: user_id,
+          },
+        },
+      );
+      return {
+        message: `Account ${status ? 'deleted' : 'restored'} successfully`,
+      };
+    } catch (error) {
+      throw new Error(`Failed to delete account: ${error.message}`);
+    }
+  }
 }

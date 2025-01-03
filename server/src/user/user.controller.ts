@@ -246,17 +246,15 @@ export class UserController {
     return await this.userService.instructorStatistics(instructorID);
   }
 
-  //   @Post('refresh-token')
-  //   async refreshToken(
-  //     @Res({ passthrough: true }) response: Response,
-  //     @Req() req: Request,
-  //   ) {
-  //     const refresh_Token = request.cookies['refresh_token'];
-  //     const newAccessToken = await this.userService.refreshToken(refresh_Token);
-  //     if (!refresh_Token) {
-  //       return response.status(401).send({ message: 'Refresh token not found' });
-  //     }
-  //     response.cookie('access_token', newAccessToken);
-  //     return refresh_Token;
-  //   }
+  @ApiResponse({ status: 201 })
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  @Put('deleteAccount/:id')
+  async deleteAccount(
+    @Req() Request: Request,
+    @Param('id') user_id: string,
+    @Body('status') status: boolean,
+  ) {
+    return await this.userService.deleteAccount(user_id, status);
+  }
 }

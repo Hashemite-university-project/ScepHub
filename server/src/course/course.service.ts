@@ -624,9 +624,6 @@ export class CourseService {
         whereCondition.course_name = { [Op.like]: `%${courseName}%` };
       }
       const allCourses = await this.CourseModel.findAll({
-        where: {
-          ...whereCondition,
-        },
         include: [
           {
             model: Instructors,
