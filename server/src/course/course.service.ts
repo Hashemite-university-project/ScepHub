@@ -75,7 +75,7 @@ export class CourseService {
       const studentSubscription =
         await this.paymentService.getSubscriptionStatus(studentID, role);
       let course_content: any;
-      console.log(studentSubscription.status);
+      //   console.log(studentSubscription.status);
       if (studentSubscription.status == 'active') {
         course_content = await this.contentModel.findAll({
           where: {
@@ -613,6 +613,40 @@ export class CourseService {
       };
     } catch (error) {
       console.error('Error in getCourseViewStatistics:', error);
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async getAllCoursesFormAdmin(courseName?: string) {
+    try {
+      const whereCondition: any = { is_deleted: false };
+      if (courseName) {
+        whereCondition.course_name = { [Op.like]: `%${courseName}%` };
+      }
+      const allCourses = await this.CourseModel.findAll({
+        where: {
+          ...whereCondition,
+        },
+        include: [
+          {
+            model: Instructors,
+            attributes: ['major'],
+            include: [
+              {
+                model: Users,
+                attributes: ['user_name'],
+              },
+            ],
+          },
+          {
+            model: Categories,
+            attributes: ['category_name'],
+          },
+        ],
+      });
+      return allCourses;
+    } catch (error) {
+      console.error(error);
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
