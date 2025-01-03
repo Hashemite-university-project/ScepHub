@@ -173,6 +173,7 @@ export class ProjectService {
       projectsID = await this.participantsModel.findAll({
         where: {
           student_id: userAccount.dataValues.user_id,
+          accepted: 2,
         },
       });
       if (!projectsID || projectsID.length === 0) {
