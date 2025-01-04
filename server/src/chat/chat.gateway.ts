@@ -88,14 +88,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (typeof senderId === 'bigint') {
       senderId = Number(senderId);
     }
-    const groupMembers = await this.chatService.getGroupById(payload.group_id);
+    const groupMembers = await this.chatService.getGroupById(
+      payload.group_id,
+      senderId,
+    );
     if (groupMembers) {
       const message = await this.chatService.createGroupMessage(
         senderId,
         payload,
       );
       //   console.log('group members =======>> ', groupMembers);
-      console.log(groupMembers);
+      console.log(senderId);
       groupMembers.forEach((member: UserGroups) => {
         const userId = member.dataValues.user_id; // Access user_id from dataValues
         const receiverClientId = this.connections.get(userId);

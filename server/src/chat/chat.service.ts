@@ -77,10 +77,15 @@ export class ChatService {
     return messages;
   }
 
-  async getGroupById(groupID: number) {
+  async getGroupById(groupID: number, senderId: any) {
     // console.log(groupID);
     const groupMembers = await this.userGroups.findAll({
-      where: { group_id: groupID },
+      where: {
+        group_id: groupID,
+        user_id: {
+          [Op.ne]: senderId, // Exclude rows where user_id equals senderId
+        },
+      },
     });
     return groupMembers;
   }

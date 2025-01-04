@@ -272,4 +272,15 @@ export class ProjectController {
       project_id,
     );
   }
+
+  @ApiResponse({
+    status: 200,
+  })
+  @Get('homeProjectDetails/:project_id')
+  async homeProjectDetails(
+    @Req() Request: Request,
+    @Param('project_id') project_id: string,
+  ) {
+    return await this.projectService.homeProjectDetails(project_id);
+  }
 }

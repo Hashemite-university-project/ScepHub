@@ -630,31 +630,43 @@ export class UserService {
 
   async popularStudents() {
     try {
-      const topStudents = await Students.findAll({
-        where: Sequelize.where(
-          Sequelize.literal(
-            `(CHAR_LENGTH(joined_projects) - CHAR_LENGTH(REPLACE(joined_projects, ',', ''))) + 1`,
-          ),
-          { [Op.gt]: 1 },
-        ),
+      // Step 1: Get the top 3 students with the most accepted projects
+      const popularParticipants = await this.participantsModel.findAll({
         attributes: [
-          'user_id',
-          'joined_projects',
-          'university_name',
-          'major',
-          'about_me',
+          'student_id',
+          [Sequelize.fn('COUNT', Sequelize.col('project_id')), 'project_count'],
         ],
+        where: { accepted: 2 },
+        group: ['student_id'],
+        order: [[Sequelize.literal('project_count'), 'DESC']],
+        limit: 3,
+      });
+
+      // Extract user_ids from the results
+      const topUserIds = popularParticipants.map(
+        (participant) => participant.student_id,
+      );
+
+      if (topUserIds.length === 0) {
+        return []; // Return an empty array if no students meet the criteria
+      }
+
+      // Step 2: Fetch student details for the top users
+      const topStudents = await Students.findAll({
+        attributes: ['user_id', 'university_name', 'major', 'about_me'],
+        where: { user_id: topUserIds },
         include: [
           {
             model: Users,
             attributes: ['user_name', 'user_email', 'user_img'],
           },
         ],
-        limit: 3,
       });
+
       return topStudents;
     } catch (error) {
-      throw new Error(`Failed to fetch top students: ${error.message}`);
+      console.error('Error fetching popular students:', error);
+      throw error;
     }
   }
 

@@ -384,57 +384,38 @@ export class ProjectService {
 
   async acceptStudent(project_id: string, student_id: string, status: any) {
     try {
-      // Find the specific ProjectParticipant record by project_id and student_id
       const projectParticipant = await this.participantsModel.findOne({
         where: {
           project_id: project_id,
           student_id: student_id,
         },
       });
-
       if (!projectParticipant) {
-        throw new HttpException(
-          'Student request not found',
-          HttpStatus.NOT_FOUND,
-        );
+        return { message: 'The request is not found!' };
       }
-
-      // Find the student record to ensure the student exists
       const student = await this.StudentModel.findByPk(student_id);
       if (!student) {
         throw new HttpException('Student not found', HttpStatus.NOT_FOUND);
       }
-
-      // Determine the new status based on the provided boolean
-      const newStatus = status; // 2 => accepted, 3 => rejected
-
-      // Update the accepted status
+      const newStatus = status;
       await projectParticipant.update({ accepted: newStatus });
 
       if (status) {
-        // If the request is accepted, add the student to the project's group
-
-        // Find the group associated with the project
         const group = await this.groupsModel.findOne({
           where: { group_project: project_id },
         });
-
         if (!group) {
           throw new HttpException(
             'Group not found for the project',
             HttpStatus.NOT_FOUND,
           );
         }
-
-        // Add the student to the userGroups
         await this.userGroups.create({
           user_id: student_id,
           group_id: group.group_id,
         });
-
         return { message: 'Student accepted successfully!' };
       } else {
-        // If the request is rejected, simply return a success message
         return { message: 'Student rejected successfully!' };
       }
     } catch (error) {
@@ -485,6 +466,7 @@ export class ProjectService {
       if (!instructor) {
         throw new HttpException('Instructor not found', HttpStatus.NOT_FOUND);
       }
+
       const projects = await this.ProjectModel.findAll({
         where: {
           project_instructor: instructor.id,
@@ -497,13 +479,18 @@ export class ProjectService {
           },
         ],
       });
+
       if (!projects.length) {
         return [];
       }
+
       const projectIds = projects.map((project) => project.project_id);
+
+      // Filter for accepted students only (accepted = 2)
       const participants = await this.participantsModel.findAll({
         where: {
           project_id: projectIds,
+          accepted: 2, // Only include accepted participants
         },
         attributes: [
           'project_id',
@@ -514,6 +501,7 @@ export class ProjectService {
         ],
         group: ['project_id'],
       });
+
       const tasks = await this.tasksModel.findAll({
         where: {
           project_id: projectIds, // Array of project IDs
@@ -533,6 +521,7 @@ export class ProjectService {
         ],
         group: ['project_id'], // Group by project_id to calculate aggregates per project
       });
+
       const projectDetails = projects.map((project) => {
         const participantData = participants.find(
           (p) => p.project_id === project.project_id,
@@ -555,6 +544,7 @@ export class ProjectService {
             : 0,
         };
       });
+
       return projectDetails;
     } catch (error) {
       console.log(error);
@@ -865,6 +855,35 @@ export class ProjectService {
       };
     } catch (error) {
       console.error(error);
+      throw new HttpException(
+        error.message || 'Internal Server Error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async homeProjectDetails(project_id: string) {
+    try {
+      const project = await this.ProjectModel.findOne({
+        where: {
+          project_id: project_id,
+        },
+        include: [
+          {
+            model: ProjectParticipants,
+            include: [
+              {
+                model: Students,
+              },
+            ],
+          },
+          {
+            model: Categories,
+          },
+        ],
+      });
+      return project;
+    } catch (error) {
       throw new HttpException(
         error.message || 'Internal Server Error',
         HttpStatus.INTERNAL_SERVER_ERROR,
