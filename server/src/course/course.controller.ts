@@ -12,6 +12,7 @@ import {
   HttpStatus,
   Query,
   ParseIntPipe,
+  ParseArrayPipe,
 } from '@nestjs/common';
 import { CourseService } from './course.service';
 import { CreateCourseDto } from './dto/create-course.dto';
@@ -33,12 +34,23 @@ export class CourseController {
 
   @ApiResponse({
     status: 200,
-    description: 'Get all courses for all roles with search and pagination',
+    description:
+      'Get all courses for all roles with search and category filtering',
   })
   @UseGuards(AuthGuard)
   @Get('allCourses')
-  async getAllCourses(@Query('course_name') search?: string) {
-    const allCourses = await this.courseService.getAllCourses(search);
+  async getAllCourses(
+    @Query('course_name') search?: string,
+    @Query(
+      'categories',
+      new ParseArrayPipe({ items: String, separator: ',', optional: true }),
+    )
+    categories?: string[],
+  ) {
+    const allCourses = await this.courseService.getAllCourses(
+      search,
+      categories,
+    );
     return allCourses;
   }
 
