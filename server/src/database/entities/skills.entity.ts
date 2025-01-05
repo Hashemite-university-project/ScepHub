@@ -18,9 +18,12 @@ export class Skills extends Model {
   skill_name: string;
 
   @ForeignKey(() => Students)
-  @ForeignKey(() => Instructors)
   @Column({ type: DataType.BIGINT, allowNull: true })
   user_id: bigint;
+
+  @ForeignKey(() => Instructors)
+  @Column({ type: DataType.BIGINT, allowNull: true })
+  instructor_id: bigint;
 
   @BelongsTo(() => Students)
   student: Students;

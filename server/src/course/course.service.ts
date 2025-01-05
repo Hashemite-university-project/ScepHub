@@ -31,17 +31,28 @@ export class CourseService {
     private readonly ratingsModel: typeof Ratings,
   ) {}
 
-  async getAllCourses(courseName?: string) {
+  async getAllCourses(courseName?: string, categories?: string[]) {
     try {
       const whereCondition: any = { is_deleted: false };
+
+      // Add course name filtering if provided
       if (courseName) {
         whereCondition.course_name = { [Op.like]: `%${courseName}%` };
       }
+
+      // Add category filtering if provided
+      if (categories && categories.length > 0) {
+        // Assuming categories are passed as strings (IDs), convert them to numbers
+        const categoryIds = categories
+          .map((id) => Number(id))
+          .filter((id) => !isNaN(id));
+        if (categoryIds.length > 0) {
+          whereCondition.course_category = { [Op.in]: categoryIds };
+        }
+      }
+
       const allCourses = await this.CourseModel.findAll({
-        where: {
-          ...whereCondition,
-          is_deleted: false,
-        },
+        where: whereCondition, // Removed redundant is_deleted: false
         include: [
           {
             model: Instructors,
@@ -59,6 +70,7 @@ export class CourseService {
           },
         ],
       });
+
       return allCourses;
     } catch (error) {
       console.error(error);

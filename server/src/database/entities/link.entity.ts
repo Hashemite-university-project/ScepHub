@@ -25,6 +25,10 @@ export class Links extends Model {
   @Column({ type: DataType.BIGINT })
   user_link: bigint;
 
+  @ForeignKey(() => Instructors)
+  @Column({ type: DataType.BIGINT })
+  instructor_link: bigint;
+
   @BelongsTo(() => Students)
   student: Students;
 

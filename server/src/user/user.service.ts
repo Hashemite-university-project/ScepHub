@@ -216,9 +216,9 @@ export class UserService {
       });
       if (!user) throw new NotFoundException();
       if (user.is_deleted) {
-        throw new NotFoundException(
-          `Account with email ${user.user_email} is not Active`,
-        );
+        return {
+          message: 'Account with email ${user.user_email} is not Active',
+        };
       }
       const passwordCompare = await this.bcryptService.compare(
         clientSignInDto.password,
@@ -406,35 +406,86 @@ export class UserService {
   ) {
     const transaction = await this.sequelize.transaction();
     try {
+      console.log(instructorForm);
+      // Find the instructor
       const instructor = await this.InstructorModel.findOne({
         where: {
           instructor_id: instructorID,
         },
         transaction,
       });
+      const instructorAccount = await this.UserModel.findByPk(instructorID, {
+        transaction,
+      });
       if (!instructor) {
         throw new HttpException('User not found', HttpStatus.NOT_FOUND);
       }
+
+      // Update general instructor information
       const instructorData = await instructor.update(
         {
-          //   skills: instructorForm.skills,
           major: instructorForm.major,
           about_me: instructorForm.about_me,
         },
         { transaction },
       );
+
+      // Update user information
       await this.UserModel.update(
         {
-          user_img: instructorImage,
+          user_name: instructorForm.user_name,
+          user_img: instructorImage || instructorAccount.user_img,
+          phone_number: instructorForm.phone_number,
         },
-        { where: { user_id: instructorID } },
+        { where: { user_id: instructorID }, transaction },
       );
+
+      console.log(instructor.id);
+      // Delete all existing skills
+      await this.skillsModel.destroy({
+        where: { instructor_id: instructor.id },
+        transaction,
+      });
+
+      // Recreate skills
+      const skills = JSON.parse(instructorForm.skills);
+      if (skills.length > 0) {
+        const skillsToCreate = skills.map((skill: any) => ({
+          skill_name: skill.skill_name,
+          instructor_id: instructor.id,
+        }));
+        await this.skillsModel.bulkCreate(skillsToCreate, { transaction });
+      }
+
+      // Delete all existing links
+      await this.linkModel.destroy({
+        where: { instructor_link: instructor.id },
+        transaction,
+      });
+
+      // Recreate links
+      const links = JSON.parse(instructorForm.links); // Parse links JSON string
+      console.log('Parsed links:', links);
+      if (Array.isArray(links) && links.length > 0) {
+        const linksToCreate = links.map((link: any) => ({
+          link_name: link.link_name,
+          link: link.link,
+          instructor_link: instructorAccount.user_id,
+        }));
+
+        await this.linkModel.bulkCreate(linksToCreate, { transaction });
+      }
+
+      // Commit transaction
       await transaction.commit();
       return instructorData.dataValues;
     } catch (error) {
       console.log(error);
       await transaction.rollback();
-      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        'Failed to update instructor information',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -991,7 +1042,7 @@ export class UserService {
       const totalCourses = await this.CourseModel.count({
         where: {
           course_instructor: instructorId,
-          is_deleted: false,
+          //   is_deleted: false,
         },
       });
 
